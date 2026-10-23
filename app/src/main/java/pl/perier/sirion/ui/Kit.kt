@@ -104,7 +104,8 @@ class Kit(val context: Context) {
         setPadding(dp(20), dp(8), dp(20), dp(8))
         leading?.let { addView(it, LinearLayout.LayoutParams(dp(leadingSize), dp(leadingSize)).apply { marginEnd = dp(16) }) }
         addView(titleBlock(title, line, titleColor), LinearLayout.LayoutParams(0, -2, 1f))
-        trailing?.let { addView(it, wrap().apply { marginStart = dp(16) }) }
+        // A control that sets its own size (the segmented control's 64px) keeps it.
+        trailing?.let { addView(it, ((it.layoutParams as? LinearLayout.LayoutParams) ?: wrap()).apply { marginStart = dp(16) }) }
         if (onClick != null) {
             setBackgroundResource(R.drawable.bg_row)
             setOnClickListener { onClick() }

@@ -2,7 +2,10 @@ package pl.perier.sirion.ui
 
 import android.app.Activity
 import android.content.Intent
+import android.database.ContentObserver
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
@@ -25,7 +28,13 @@ class PhoneActivity : Activity() {
     private lateinit var bar: BottomBar
     private lateinit var book: PhoneBook
     private val calls get() = (application as SirionApp).calls
+    private val photos get() = (application as SirionApp).bluetooth.extras
     private var tab = TAB_FAVOURITES
+
+    /** The unit fills its call list a few seconds after a call: show it as it lands. */
+    private val callsChanged = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) { if (tab == TAB_RECENTS) load() }
+    }
 
     private data class Row(val contact: Contact, val detail: String, val missed: Boolean = false)
 
@@ -48,6 +57,7 @@ class PhoneActivity : Activity() {
         super.onResume()
         hideSystemBars()
         bar.resume()
+        contentResolver.registerContentObserver(PhoneBook.CALLS, true, callsChanged)
         load()
     }
 
@@ -59,6 +69,7 @@ class PhoneActivity : Activity() {
     override fun onPause() {
         super.onPause()
         bar.pause()
+        contentResolver.unregisterContentObserver(callsChanged)
     }
 
     private fun load() {
@@ -157,7 +168,7 @@ class PhoneActivity : Activity() {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val view = convertView ?: layoutInflater.inflate(R.layout.row_contact, parent, false)
             val row = rows[position]
-            view.findViewById<TextView>(R.id.contact_initials).showInitials(row.contact.name)
+            view.findViewById<TextView>(R.id.contact_initials).showAvatar(row.contact.name, photos.photo(row.contact.number))
             view.findViewById<TextView>(R.id.contact_name).apply {
                 showName(row.contact.name)
                 setTextColor(getColor(if (row.missed) R.color.danger else R.color.text_primary))
@@ -166,6 +177,10 @@ class PhoneActivity : Activity() {
             view.findViewById<View>(R.id.contact_call).setOnClickListener { call(row.contact) }
             view.setOnClickListener { call(row.contact) }
             view.setOnLongClickListener {
+                if (book.favouritesFromPhone) {
+                    Toast.makeText(this@PhoneActivity, R.string.favourites_on_phone, Toast.LENGTH_SHORT).show()
+                    return@setOnLongClickListener true
+                }
                 val adding = !book.isFavourite(row.contact)
                 book.toggleFavourite(row.contact)
                 Toast.makeText(this@PhoneActivity, if (adding) R.string.favourite_added else R.string.favourite_removed, Toast.LENGTH_SHORT).show()

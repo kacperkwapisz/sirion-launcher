@@ -1,6 +1,8 @@
 package pl.perier.sirion.ui
 
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.widget.TextView
 import pl.perier.sirion.R
 import pl.perier.sirion.logic.PhoneText
@@ -34,5 +36,19 @@ fun TextView.showInitials(name: String) {
         compoundDrawableTintList = ColorStateList.valueOf(context.getColor(R.color.text_secondary))
     } else {
         setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+    }
+}
+
+/** The contact's photo when the phone has one, otherwise their initials. */
+fun TextView.showAvatar(name: String, photo: Bitmap?) {
+    if (photo != null) {
+        text = ""
+        setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+        background = BitmapDrawable(resources, photo)
+        backgroundTintList = null
+    } else {
+        setBackgroundResource(R.drawable.bg_dot)
+        backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.surface_track))
+        showInitials(name)
     }
 }

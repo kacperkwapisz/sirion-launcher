@@ -27,6 +27,7 @@ class BottomBar(private val activity: Activity, private val active: Nav) {
 
     private val volume = MediaVolume(activity)
     private val brightness get() = (activity.application as SirionApp).brightness
+    private val updater get() = (activity.application as SirionApp).updater
     private var popover: Popover? = null
 
     private val events = object : BroadcastReceiver() {
@@ -122,6 +123,7 @@ class BottomBar(private val activity: Activity, private val active: Nav) {
     }
 
     fun resume() {
+        visible++
         activity.registerReceiver(events, IntentFilter().apply {
             addAction(Intent.ACTION_TIME_TICK)
             addAction(Intent.ACTION_TIME_CHANGED)
@@ -130,12 +132,21 @@ class BottomBar(private val activity: Activity, private val active: Nav) {
         })
         refreshClock()
         refreshVolume()
+        refreshUpdate()
+        updater.onReady = ::refreshUpdate
     }
 
     fun pause() {
+        visible = (visible - 1).coerceAtLeast(0)
+        updater.onReady = null
         popover?.dismiss()
         popover = null
         activity.unregisterReceiver(events)
+    }
+
+    /** Orange download glyph in the status strip while an update waits for Install. */
+    private fun refreshUpdate() {
+        activity.findViewById<View>(R.id.status_update)?.visibility = if (updater.ready != null) View.VISIBLE else View.GONE
     }
 
     /** Muted: crossed speaker, the level from before greyed out, on a #262626 pill. */
@@ -158,7 +169,11 @@ class BottomBar(private val activity: Activity, private val active: Nav) {
         activity.findViewById<TextView>(R.id.date).text = TimeFormat.date(now)
     }
 
-    private companion object {
-        const val VOLUME_CHANGED = "android.media.VOLUME_CHANGED_ACTION"
+    companion object {
+        /** How many of our screens with the bar are showing; the volume keys use it to skip their own card. */
+        @Volatile private var visible = 0
+        val onScreen: Boolean get() = visible > 0
+
+        private const val VOLUME_CHANGED = "android.media.VOLUME_CHANGED_ACTION"
     }
 }

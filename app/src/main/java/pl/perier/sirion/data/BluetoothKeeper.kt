@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -33,6 +34,9 @@ class BluetoothKeeper(private val context: Context, private val helper: RootHelp
     private val prefs = context.getSharedPreferences("phones", Context.MODE_PRIVATE)
     private val proxies = mutableMapOf<Int, BluetoothProfile>()
     private var lastTried: String? = null
+
+    /** Contact photos and favourites, which the unit's own sync leaves out. */
+    val extras = PhoneExtras(context)
 
     /** The driver turned Bluetooth off in Settings: leave it off until they turn it on or the next ignition. */
     var userOff = false
@@ -196,6 +200,56 @@ class BluetoothKeeper(private val context: Context, private val helper: RootHelp
         phones().firstOrNull(::isConnected)?.let { syncPhonebook(it) }
     }
 
+    /** Asks the connected phone for its call list again, a moment after a call ends. Any thread. */
+    fun syncCallsSoon() = main.postDelayed({
+        val device = phones().firstOrNull(::isConnected) ?: return@postDelayed
+        val manager = pbManager ?: return@postDelayed
+        runCatching {
+            manager.javaClass.getMethod("startDownload", BluetoothDevice::class.java, Int::class.javaPrimitiveType)
+                .invoke(manager, device, PBAP_CALL_HISTORY)
+        }.onFailure { Log.w(TAG, "Call list sync failed", it) }
+        Log.i(TAG, "Call list download asked for ${device.name}")
+    }, CALL_SYNC_DELAY_MS)
+
+    /**
+     * The phone serves one phonebook download at a time, so photos wait for
+     * the unit's own sync: its call list is the last thing it writes. Starts
+     * once that list has been quiet for [PHOTOS_QUIET_MS], or after
+     * [PHOTOS_DELAY_MS] if nothing changed. Main thread.
+     */
+    private fun photosWhenSyncIsDone(device: BluetoothDevice, force: Boolean) {
+        val resolver = context.contentResolver
+        var started = false
+        lateinit var observer: ContentObserver
+        val start = Runnable {
+            if (started) return@Runnable
+            started = true
+            resolver.unregisterContentObserver(observer)
+            syncPhotos(device, force)
+        }
+        val fallback = Runnable { start.run() }
+        observer = object : ContentObserver(main) {
+            override fun onChange(selfChange: Boolean) {
+                main.removeCallbacks(start)
+                main.postDelayed(start, PHOTOS_QUIET_MS)
+            }
+        }
+        resolver.registerContentObserver(PhoneBook.CALLS, true, observer)
+        main.postDelayed(fallback, PHOTOS_DELAY_MS)
+    }
+
+    /** Photos take a while and rarely change: at most twice a day, or when forced (a fresh start), once the unit's own sync is done. */
+    private fun syncPhotos(device: BluetoothDevice, force: Boolean, attempt: Int = 0) {
+        val now = System.currentTimeMillis()
+        if (!force && now - prefs.getLong(KEY_PHOTOS_AT, 0) < PHOTOS_EVERY_MS) return
+        if (!isConnected(device)) return
+        extras.download(device) { ok ->
+            if (ok) prefs.edit().putLong(KEY_PHOTOS_AT, System.currentTimeMillis()).apply()
+            // The phone may still be busy with the unit's own sync: one more go later.
+            else if (attempt == 0) main.postDelayed({ syncPhotos(device, force, attempt + 1) }, PHOTOS_DELAY_MS)
+        }
+    }
+
     /** Main thread only. Contacts first, then the call history a little later. */
     private fun syncPhonebook(device: BluetoothDevice, force: Boolean = false, attempt: Int = 0) {
         val now = System.currentTimeMillis()
@@ -205,7 +259,10 @@ class BluetoothKeeper(private val context: Context, private val helper: RootHelp
         val started = runCatching {
             val download = manager.javaClass.getMethod("startDownload", BluetoothDevice::class.java, Int::class.javaPrimitiveType)
             val ok = download.invoke(manager, device, PBAP_CONTACTS) as? Boolean ?: false
-            if (ok) main.postDelayed({ runCatching { download.invoke(manager, device, PBAP_CALL_HISTORY) } }, SYNC_DELAY_MS)
+            if (ok) main.postDelayed({
+                runCatching { download.invoke(manager, device, PBAP_CALL_HISTORY) }
+                photosWhenSyncIsDone(device, force)
+            }, SYNC_DELAY_MS)
             ok
         }.onFailure { Log.w(TAG, "Phonebook sync failed", it) }.getOrDefault(false)
         Log.i(TAG, "Phonebook download ${if (started) "started" else "not started"} for ${device.name} (try ${attempt + 1})")
@@ -216,6 +273,12 @@ class BluetoothKeeper(private val context: Context, private val helper: RootHelp
     private companion object {
         const val TAG = "SirionBluetooth"
         const val SYNC_DELAY_MS = 8_000L
+        const val PHOTOS_DELAY_MS = 60_000L
+        const val PHOTOS_QUIET_MS = 5_000L
+        const val PHOTOS_EVERY_MS = 12 * 60 * 60_000L
+        const val KEY_PHOTOS_AT = "photos_at"
+        /** The phone writes the call to its own list a moment after hanging up. */
+        const val CALL_SYNC_DELAY_MS = 4_000L
         const val RESYNC_DELAY_MS = 60_000L
         const val RESYNC_MIN_GAP_MS = 120_000L
         const val SYNC_RETRIES = 3

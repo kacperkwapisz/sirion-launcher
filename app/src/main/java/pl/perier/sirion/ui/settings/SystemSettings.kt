@@ -4,8 +4,13 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.text.format.DateFormat
+import android.content.Intent
+import android.util.TypedValue
 import android.view.View
+import android.widget.LinearLayout
+import pl.perier.sirion.R
 import pl.perier.sirion.logic.HelperCommand
+import pl.perier.sirion.ui.UpdatingActivity
 import java.time.ZoneId
 
 /** Settings · System: what's running, a restart, and the clock. */
@@ -35,7 +40,42 @@ class SystemSettings(private val host: SettingsActivity) {
                 main.postDelayed({ host.render() }, 500)
             },
         )
-        return kit.column(header, kit.card(clock))
+        return kit.column(header, updateCard(), kit.card(clock))
+    }
+
+    /** Shown only while a downloaded update waits for the driver. */
+    private fun updateCard(): View? {
+        val update = host.app.updater.ready ?: return null
+        return kit.card(kit.row(
+            "Update ready", "Sirion ${update.versionName} is downloaded",
+            trailing = kit.pill("See what's new") { host.open(::update) },
+        ))
+    }
+
+    private fun update(): View {
+        val update = host.app.updater.ready ?: return screen()
+        val install = kit.pill("Install") {
+            host.startActivity(Intent(host, UpdatingActivity::class.java).putExtra(UpdatingActivity.EXTRA_VERSION, update.versionName))
+        }
+        // Every version since the installed one, newest first, so a skipped release's notes aren't lost.
+        val releases = update.changesSince(host.app.updater.installedVersion)
+        val changes = LinearLayout(host).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundResource(R.drawable.bg_card)
+            setPadding(kit.dp(20), kit.dp(20), kit.dp(20), kit.dp(20))
+            releases.forEachIndexed { i, release ->
+                val label = if (releases.size == 1) "What changed" else "Sirion ${release.versionName}"
+                addView(kit.text(R.style.Text_Context, label), LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = kit.dp(24) })
+                release.notes.ifEmpty { listOf("Fixes and small changes") }.forEach { line ->
+                    addView(kit.text(R.style.Text, line).apply { setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22f); maxLines = 3 },
+                        LinearLayout.LayoutParams(-1, -2).apply { topMargin = kit.dp(14) })
+                }
+            }
+        }
+        return kit.column(
+            kit.backHeader("Sirion ${update.versionName}", "Takes about a minute. The launcher restarts on its own", host::back, install),
+            changes,
+        )
     }
 
     private companion object {

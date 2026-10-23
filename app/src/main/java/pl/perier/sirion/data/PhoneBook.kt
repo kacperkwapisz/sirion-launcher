@@ -9,8 +9,8 @@ data class RecentCall(val name: String, val number: String, val type: String, va
 
 /**
  * Contacts and call history from the Bluetooth stack's own stores (filled
- * from the phone over PBAP). Favourites don't exist on that side, so we
- * keep our own list.
+ * from the phone over PBAP). Favourites come from the phone when it shares
+ * them (PhoneExtras saves them here); otherwise we keep our own list.
  */
 class PhoneBook(private val context: Context) {
     private val resolver get() = context.contentResolver
@@ -44,10 +44,27 @@ class PhoneBook(private val context: Context) {
         return calls
     }
 
-    fun favourites(): List<Contact> =
+    /** The phone's favourites in the phone's order, or the ones kept in the car. */
+    fun favourites(): List<Contact> = phoneFavourites().ifEmpty {
         favouritesStore.getStringSet(KEY, emptySet()).orEmpty()
-            .mapNotNull { entry -> entry.split(SEPARATOR, limit = 2).takeIf { it.size == 2 }?.let { Contact(it[0], it[1]) } }
+            .mapNotNull(::decode)
             .sortedBy { it.name.lowercase() }
+    }
+
+    /** True when the Favourites tab shows the phone's list (it can't be changed in the car). */
+    val favouritesFromPhone get() = phoneFavourites().isNotEmpty()
+
+    /** Null: the phone doesn't share favourites, so the car's own list is used. */
+    fun savePhoneFavourites(contacts: List<Contact>?) {
+        favouritesStore.edit().apply {
+            if (contacts == null) remove(KEY_PHONE) else putString(KEY_PHONE, contacts.joinToString("\n", transform = ::encode))
+        }.apply()
+    }
+
+    private fun phoneFavourites(): List<Contact> =
+        favouritesStore.getString(KEY_PHONE, null).orEmpty().split("\n").mapNotNull(::decode)
+
+    private fun decode(entry: String) = entry.split(SEPARATOR, limit = 2).takeIf { it.size == 2 }?.let { Contact(it[0], it[1]) }
 
     fun isFavourite(contact: Contact) = encode(contact) in favouritesStore.getStringSet(KEY, emptySet()).orEmpty()
 
@@ -59,11 +76,12 @@ class PhoneBook(private val context: Context) {
 
     private fun encode(contact: Contact) = contact.name + SEPARATOR + contact.number
 
-    private companion object {
-        val CONTACTS: Uri = Uri.parse("content://com.autochips.bluetooth.contacts/bluetooth_contacts_table")
-        val DATA: Uri = Uri.parse("content://com.autochips.bluetooth.contactsData/bluetooth_contacts_data_table")
+    companion object {
+        private val CONTACTS: Uri = Uri.parse("content://com.autochips.bluetooth.contacts/bluetooth_contacts_table")
+        private val DATA: Uri = Uri.parse("content://com.autochips.bluetooth.contactsData/bluetooth_contacts_data_table")
         val CALLS: Uri = Uri.parse("content://com.autochips.bluetooth.calllog/bluetooth_calllog_table")
-        const val KEY = "entries"
-        const val SEPARATOR = "\u001F"
+        private const val KEY = "entries"
+        private const val KEY_PHONE = "phone"
+        private const val SEPARATOR = "\u001F"
     }
 }

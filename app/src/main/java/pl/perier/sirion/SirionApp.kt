@@ -12,6 +12,7 @@ import android.util.Log
 import pl.perier.sirion.data.BluetoothCalls
 import pl.perier.sirion.data.BluetoothKeeper
 import pl.perier.sirion.data.BrightnessStore
+import pl.perier.sirion.data.ButtonLightsStore
 import pl.perier.sirion.data.Demo
 import pl.perier.sirion.data.RadioStore
 import pl.perier.sirion.data.RootHelper
@@ -45,6 +46,8 @@ class SirionApp : Application() {
         private set
     lateinit var sound: SoundStore
         private set
+    lateinit var buttonLights: ButtonLightsStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -60,10 +63,15 @@ class SirionApp : Application() {
         // Sending the saved brightness also starts the root helper and brightnessd at boot.
         brightness = BrightnessStore(this, helper).also { it.apply() }
         sound = SoundStore(this, helper).also { it.start() }
+        buttonLights = ButtonLightsStore(this).also { it.start() }
         bluetooth = BluetoothKeeper(this, helper).also { it.start() }
         calls = BluetoothCalls(this).also { it.start() }
         // A ringing or outgoing call brings up our call screen, wherever we are.
+        var inCall = false
         calls.listen { call ->
+            // A call just ended: fetch the phone's call list so Recents shows it.
+            if (inCall && call == null) bluetooth.syncCallsSoon()
+            inCall = call != null
             if (call?.screen == CallScreen.Incoming || call?.screen == CallScreen.Calling) {
                 startActivity(Intent(this, CallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))
             }

@@ -28,12 +28,13 @@
         android:layout_height="1dp"
         android:layout_weight="1" />
 
+    <!-- An update is downloaded and waits in Settings · System. Orange: the one exception to the accent rule. -->
     <ImageView
-        android:id="@+id/status_night"
+        android:id="@+id/status_update"
         android:layout_width="18dp"
         android:layout_height="18dp"
-        android:src="@drawable/g_moon"
-        android:tint="@color/text_secondary"
+        android:src="@drawable/g_update"
+        android:tint="@color/accent"
         android:visibility="gone" />
 
     <ImageView

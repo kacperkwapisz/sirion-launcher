@@ -22,9 +22,8 @@ enum class CallScreen {
 
         /** Compares the last 9 digits, so +48, 0048 and spaces don't matter. */
         fun sameNumber(a: String, b: String): Boolean {
-            val left = a.filter(Char::isDigit).takeLast(9)
-            val right = b.filter(Char::isDigit).takeLast(9)
-            return left.isNotEmpty() && left == right
+            val left = PhoneText.numberKey(a)
+            return left.isNotEmpty() && left == PhoneText.numberKey(b)
         }
     }
 }

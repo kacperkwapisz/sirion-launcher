@@ -99,7 +99,7 @@ class CallActivity : Activity() {
         if (call.screen == CallScreen.InCall && connectedAt == 0L) connectedAt = SystemClock.elapsedRealtime()
         val shown = name ?: call.number.ifEmpty { getString(R.string.unknown_caller) }
         findViewById<TextView>(R.id.call_name).showName(shown)
-        findViewById<TextView>(R.id.call_initials).showInitials(shown)
+        findViewById<TextView>(R.id.call_initials).showAvatar(shown, (application as SirionApp).bluetooth.extras.photo(call.number))
         val elapsed = if (connectedAt == 0L) 0 else SystemClock.elapsedRealtime() - connectedAt
         findViewById<TextView>(R.id.call_line).text = call.screen.line(elapsed)
 

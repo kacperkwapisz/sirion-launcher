@@ -26,6 +26,8 @@
     <string name="no_contacts_line">Copying contacts from your phone. Allow contact sharing on it if it asks.</string>
     <string name="favourite_added">Added to favourites</string>
     <string name="favourite_removed">Removed from favourites</string>
+    <string name="update_failed">The update didn\'t install. Your current version keeps running.</string>
+    <string name="favourites_on_phone">Favourites come from your iPhone. Change them there.</string>
     <string name="mute">Mute</string>
     <string name="unmute">Unmute</string>
     <string name="use_phone">Use phone</string>
@@ -46,4 +48,5 @@
     <string name="call">Call</string>
     <string name="back_to_call">Back to call</string>
     <string name="pair_new_phone">Pair a new phone</string>
+    <string name="volume_keys_description">Takes the unit\'s volume and mute buttons so Sirion shows its own volume card instead of Android\'s.</string>
 </resources>

@@ -28,6 +28,8 @@ object Helper {
     private const val HOME = "$PACKAGE/.ui.HomeActivity"
     private val previousApk = File("/data/local/tmp/sirion-previous.apk")
     private val stagedApk = File("/data/local/tmp/sirion-update.apk")
+    private val updateScript = File("/data/local/tmp/sirion-update.sh")
+    private val healthyMark = File("/data/local/tmp/sirion-healthy")
 
     /** How long a new version gets to report itself healthy before we roll back. */
     private const val HEALTH_WINDOW_MS = 180_000L
@@ -36,8 +38,32 @@ object Helper {
     private val CARPLAY_ENGINES = listOf("com.shihab.diplay", "com.zjinnova.zlink")
     private const val CARPLAY_CHECK_MS = 700L
 
+    /** Arguments: new APK, previous APK, healthy mark, seconds to wait for it. */
+    private val UPDATE_SCRIPT = """
+        new=${'$'}1; previous=${'$'}2; mark=${'$'}3; wait=${'$'}4
+        trap 'rm -f "${'$'}0"' EXIT
+        result=${'$'}(pm install -r "${'$'}new" 2>&1)
+        rm -f "${'$'}new"
+        case "${'$'}result" in
+          *Success*) ;;
+          *)
+            # Nothing changed: the launcher is still running and hears why.
+            am broadcast -a $PACKAGE.UPDATE_FAILED -p $PACKAGE --es error "${'$'}result" >/dev/null
+            exit 1 ;;
+        esac
+        am start -n $HOME >/dev/null
+        i=0
+        while [ ${'$'}i -lt ${'$'}wait ]; do
+          [ -f "${'$'}mark" ] && exit 0
+          sleep 1
+          i=${'$'}((i + 1))
+        done
+        # The new version never said it was fine: put the previous one back.
+        pm install -r -d "${'$'}previous" >/dev/null 2>&1
+        am start -n $HOME >/dev/null
+    """.trimIndent() + "\n"
+
     private val clients = CopyOnWriteArrayList<PrintWriter>()
-    @Volatile private var awaitingHealth = false
     private var lastKilohertz = 92_000
     private var radioOpen = false
 
@@ -112,10 +138,12 @@ object Helper {
             }
             is HelperCommand.Clock24 -> sh("settings put system time_12_24 ${if (command.on) 24 else 12}")
             HelperCommand.Restart -> sh("reboot")
-            is HelperCommand.Healthy -> if (awaitingHealth) {
-                // The new version started and ran fine. Exit so the next
-                // connection starts the helper from the new APK.
-                awaitingHealth = false
+            // The script is there only while an update waits to hear from the new version.
+            is HelperCommand.Healthy -> if (updateScript.isFile && !healthyMark.isFile) {
+                // The new version started and ran fine: tells the update script
+                // not to roll back. Exit so the next connection starts the
+                // helper from the new APK.
+                healthyMark.writeText("${command.versionCode}\n")
                 broadcast("updated ${command.versionCode}")
                 thread { Thread.sleep(500); exitProcess(0) }
             }
@@ -123,30 +151,21 @@ object Helper {
     }
 
     /**
-     * Installs an update with `pm`, keeping the current APK so a version that
-     * never reports healthy is rolled back automatically.
+     * Installs an update with a script that runs on its own: replacing the
+     * package kills the launcher, and with it the adb session this helper
+     * lives in. The script installs, opens the launcher again, and puts the
+     * previous version back if the new one never reports healthy.
      */
     private fun install(apk: File) {
         if (!apk.isFile) return
         val current = sh("pm path $PACKAGE").removePrefix("package:").trim()
         if (current.isNotEmpty()) File(current).copyTo(previousApk, overwrite = true)
         apk.copyTo(stagedApk, overwrite = true)
-        val result = sh("pm install -r ${stagedApk.path}")
-        stagedApk.delete()
-        if (!result.contains("Success")) {
-            broadcast("error install $result")
-            return
-        }
-        awaitingHealth = true
-        sh("am start -n $HOME")
-        thread(isDaemon = true) {
-            Thread.sleep(HEALTH_WINDOW_MS)
-            if (awaitingHealth && previousApk.isFile) {
-                sh("pm install -r -d ${previousApk.path}")
-                sh("am start -n $HOME")
-                awaitingHealth = false
-            }
-        }
+        healthyMark.delete()
+        updateScript.writeText(UPDATE_SCRIPT)
+        val run = "sh ${updateScript.path} ${stagedApk.path} ${previousApk.path} ${healthyMark.path} ${HEALTH_WINDOW_MS / 1000}"
+        // Its own session and no pipes back to us, so it outlives this process.
+        sh("if command -v setsid >/dev/null; then setsid $run; else nohup $run; fi </dev/null >/dev/null 2>&1 &")
     }
 
     /**

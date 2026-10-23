@@ -2,6 +2,7 @@ package pl.perier.sirion.ui.settings
 
 import android.view.View
 import pl.perier.sirion.logic.Brightness
+import pl.perier.sirion.logic.ButtonLights
 import pl.perier.sirion.logic.SettingsText
 import pl.perier.sirion.logic.TimeFormat
 import java.time.LocalDate
@@ -35,7 +36,25 @@ class DisplaySettings(private val host: SettingsActivity) {
                 if (store.hasGpsFix()) "Where the car is, from GPS" else "For Szczecin until GPS finds the car",
             ))
         } else null
-        return kit.column(header, levels, sun)
+        return kit.column(header, levels, buttonLights(), sun)
+    }
+
+    /** The unit's own buttons: lit with the headlights (the unit's way) or always. */
+    private fun buttonLights(): View {
+        val lights = host.app.buttonLights
+        val modes = listOf(ButtonLights.Mode.WITH_HEADLIGHTS, ButtonLights.Mode.ALWAYS_ON)
+        val line = when (lights.mode) {
+            ButtonLights.Mode.WITH_HEADLIGHTS -> "Light up when the headlights are on"
+            ButtonLights.Mode.ALWAYS_ON -> "On whenever the unit is on"
+        }
+        return kit.card(kit.row(
+            "Button lights",
+            line,
+            trailing = kit.segmented(listOf("With headlights", "Always on"), modes.indexOf(lights.mode)) { i ->
+                lights.mode = modes[i]
+                host.render()
+            },
+        ))
     }
 
     private fun level(label: String, line: String, value: Int, with: (Int) -> Brightness): View {

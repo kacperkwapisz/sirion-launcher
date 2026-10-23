@@ -62,6 +62,8 @@ class HomeActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        // The D was only for the cold start; behind the cards it's plain black.
+        window.setBackgroundDrawableResource(R.color.background)
         music = BluetoothMusic(this) { main.post(::refreshMusic) }
         val app = application as SirionApp
         helper = app.helper

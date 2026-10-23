@@ -151,8 +151,11 @@ class AppsActivity : Activity() {
         }
     }
 
-    private fun settings() = kit.tile(kit.mark(R.drawable.g_sliders), "", "Settings", "Bluetooth, sound, display") {
-        startActivity(Intent(this, SettingsActivity::class.java))
+    private fun settings() = kit.tile(kit.mark(R.drawable.g_sliders), if (app.updater.ready != null) "Update ready" else "", "Settings", "Bluetooth, sound, display") {
+        // With an update waiting, go straight to where it's installed.
+        val intent = Intent(this, SettingsActivity::class.java)
+        if (app.updater.ready != null) intent.putExtra(SettingsActivity.EXTRA_CATEGORY, SettingsActivity.Category.SYSTEM.name)
+        startActivity(intent)
     }
 
     private fun unitApps() = kit.tile(kit.mark(R.drawable.g_apps), "", "Unit apps", "The original menus") {

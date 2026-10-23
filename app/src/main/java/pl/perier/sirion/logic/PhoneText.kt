@@ -63,6 +63,9 @@ object PhoneText {
         return (listOf(prefix).filter { it.isNotEmpty() } + groups).joinToString(" ")
     }
 
+    /** What two ways of writing one number share: its last 9 digits ("+48 535…" and "535…" match). */
+    fun numberKey(number: String) = number.filter(Char::isDigit).takeLast(9)
+
     /** The contact whose number matches what's typed (last 9 digits), or null. */
     fun keypadMatch(typed: String, book: List<Pair<String, String>>): String? {
         if (typed.count { it.isDigit() } < 9) return null

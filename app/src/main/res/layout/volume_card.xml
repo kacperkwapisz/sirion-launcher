@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Volume card (Paper library, next to the volume popover): shown for the unit's buttons when our bar isn't on screen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="440dp"
+    android:layout_height="88dp"
+    android:background="@drawable/bg_popover"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="24dp">
+
+    <ImageView
+        android:id="@+id/card_volume_glyph"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:src="@drawable/g_speaker"
+        android:tint="@color/text_secondary" />
+
+    <ProgressBar
+        android:id="@+id/card_volume_level"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="0dp"
+        android:layout_height="8dp"
+        android:layout_marginStart="18dp"
+        android:layout_weight="1"
+        android:progressDrawable="@drawable/slider_track" />
+
+    <TextView
+        android:id="@+id/card_volume_value"
+        style="@style/Text"
+        android:layout_width="56dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="18dp"
+        android:fontFamily="@font/inter_tight_medium"
+        android:fontFeatureSettings="tnum"
+        android:gravity="end"
+        android:textSize="34dp" />
+</LinearLayout>

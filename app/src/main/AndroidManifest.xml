@@ -29,7 +29,8 @@
             android:launchMode="singleTask"
             android:resumeWhilePausing="true"
             android:screenOrientation="landscape"
-            android:stateNotNeeded="true">
+            android:stateNotNeeded="true"
+            android:theme="@style/Theme.Sirion.Home">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -37,6 +38,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.UpdatingActivity"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape" />
 
         <!-- Starts the process at boot so Bluetooth is fixed before anyone opens the launcher. -->
         <receiver android:name=".BootReceiver" android:exported="true">
@@ -95,5 +101,17 @@
             android:name=".ui.KeypadActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode|density|fontScale"
             android:screenOrientation="landscape" />
+
+        <!-- The unit's volume and mute buttons, everywhere (see VolumeKeys). -->
+        <service
+            android:name=".ui.VolumeKeys"
+            android:exported="false"
+            android:label="Sirion volume buttons"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/volume_keys" />
+        </service>
     </application>
 </manifest>

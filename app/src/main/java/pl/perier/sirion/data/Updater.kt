@@ -2,6 +2,8 @@ package pl.perier.sirion.data
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import pl.perier.sirion.logic.HelperCommand
 import pl.perier.sirion.logic.UpdateManifest
@@ -14,12 +16,14 @@ import java.util.concurrent.Executors
 /**
  * Over-the-air updates. When the unit is online (home Wi-Fi, or the iPhone
  * hotspot with CarPlay off) it reads `update.json` from the latest GitHub
- * release, downloads a newer APK, checks its SHA-256, and hands it to the
- * root helper, which installs it silently and rolls back if the new version
- * never reports healthy.
+ * release, downloads a newer APK and checks its SHA-256. Then it waits: the
+ * driver reads what changed in Settings · System and taps Install, which
+ * hands the APK to the root helper. The helper installs it and rolls back if
+ * the new version never reports healthy.
  */
 class Updater(private val context: Context, private val helper: RootHelper) {
     private val worker = Executors.newSingleThreadExecutor()
+    private val main = Handler(Looper.getMainLooper())
     private val prefs get() = context.getSharedPreferences("updater", Context.MODE_PRIVATE)
 
     val installedVersion: Int
@@ -35,21 +39,45 @@ class Updater(private val context: Context, private val helper: RootHelper) {
         runCatching { check() }.onFailure { Log.w(TAG, "Update check failed", it) }
     }
 
+    /** A newer version that's downloaded, checked and waiting for Install, or null. */
+    val ready: UpdateManifest?
+        get() = prefs.getString(KEY_READY, null)?.let(UpdateManifest::parse)
+            ?.takeIf { it.isNewerThan(installedVersion) && apk(it).exists() }
+
+    /** Called on the main thread when an update becomes ready. */
+    var onReady: (() -> Unit)? = null
+
+    /** Hands the waiting update to the root helper; the launcher restarts into it. */
+    fun install(): Boolean {
+        val update = ready ?: return false
+        Log.i(TAG, "Installing ${update.versionName} (${update.versionCode})")
+        helper.send(HelperCommand.Install(apk(update).path))
+        return true
+    }
+
     private fun check() {
         val manifest = UpdateManifest.parse(fetch(MANIFEST_URL).decodeToString()) ?: return
-        if (!manifest.isNewerThan(installedVersion)) return
-        val dir = File(context.cacheDir, "ota").apply { mkdirs() }
+        if (!manifest.isNewerThan(installedVersion)) {
+            // Installed already: drop the old download.
+            File(context.filesDir, "ota").deleteRecursively()
+            return
+        }
+        if (ready?.versionCode == manifest.versionCode) return
+        val dir = File(context.filesDir, "ota").apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
-        val apk = File(dir, "sirion-${manifest.versionCode}.apk")
+        val apk = apk(manifest)
         apk.writeBytes(fetch(manifest.apk))
         if (!manifest.matches(sha256(apk))) {
             Log.w(TAG, "Downloaded APK does not match its hash; ignoring")
             apk.delete()
             return
         }
-        Log.i(TAG, "Installing ${manifest.versionName} (${manifest.versionCode})")
-        helper.send(HelperCommand.Install(apk.path))
+        Log.i(TAG, "${manifest.versionName} (${manifest.versionCode}) is ready to install")
+        prefs.edit().putString(KEY_READY, manifest.toJson()).apply()
+        main.post { onReady?.invoke() }
     }
+
+    private fun apk(manifest: UpdateManifest) = File(File(context.filesDir, "ota"), "sirion-${manifest.versionCode}.apk")
 
     private fun online(): Boolean {
         val connectivity = context.getSystemService(ConnectivityManager::class.java)
@@ -95,5 +123,6 @@ class Updater(private val context: Context, private val helper: RootHelper) {
         const val MANIFEST_URL = "https://github.com/kacperkwapisz/sirion-launcher/releases/latest/download/update.json"
         const val INTERVAL_MS = 6 * 60 * 60 * 1000L
         const val KEY_LAST_CHECK = "last_check"
+        const val KEY_READY = "ready"
     }
 }

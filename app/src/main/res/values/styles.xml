@@ -10,6 +10,11 @@
         <item name="android:windowAnimationStyle">@style/ScreenAnimations</item>
     </style>
 
+    <!-- Home's cold start shows the D (see launch_background); HomeActivity swaps in plain black once drawn. -->
+    <style name="Theme.Sirion.Home">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+
     <!-- Screen changes: short fades instead of the default slide and zoom. -->
     <style name="ScreenAnimations" parent="@android:style/Animation.Activity">
         <item name="android:activityOpenEnterAnimation">@anim/screen_in</item>

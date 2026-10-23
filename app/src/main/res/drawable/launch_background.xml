@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What Android shows while the launcher starts from cold (after an update, a
+  crash or boot): the D exactly where the Updating screen has it (45px above
+  centre), so an update goes from that screen to this without a black gap.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/background" />
+    <item android:bottom="90dp" android:gravity="center" android:drawable="@drawable/daihatsu_mark" />
+</layer-list>
