@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status strip: time at a glance, plus the date. Never interactive. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="20dp">
+
+    <TextView
+        android:id="@+id/clock"
+        style="@style/Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter_tight_medium"
+        android:fontFeatureSettings="tnum"
+        android:textSize="18dp" />
+
+    <TextView
+        android:id="@+id/date"
+        style="@style/Text.Context"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1" />
+
+    <ImageView
+        android:id="@+id/status_night"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:src="@drawable/g_moon"
+        android:tint="@color/text_secondary"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/status_bluetooth"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="18dp"
+        android:src="@drawable/g_bluetooth"
+        android:tint="@color/text_primary" />
+
+    <ImageView
+        android:id="@+id/status_wifi"
+        android:layout_width="20dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="18dp"
+        android:src="@drawable/g_wifi"
+        android:tint="@color/text_primary" />
+</LinearLayout>

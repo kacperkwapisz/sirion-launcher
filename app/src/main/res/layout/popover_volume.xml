@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Popover · Volume (from the value). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="500dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_popover"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <TextView style="@style/PopoverTitle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/volume" />
+        <TextView android:id="@+id/volume_context" style="@style/Text.Context" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/volume_music" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginTop="30dp" android:gravity="center_vertical" android:orientation="horizontal">
+        <ImageButton
+            android:id="@+id/volume_mute"
+            android:layout_width="76dp"
+            android:layout_height="64dp"
+            android:background="@drawable/bg_inner"
+            android:contentDescription="Mute"
+            android:padding="18dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/g_speaker_muted"
+            android:tint="@color/text_primary" />
+        <pl.perier.sirion.ui.Slider android:id="@+id/volume_slider" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1" android:layout_marginStart="2dp" />
+    </LinearLayout>
+</LinearLayout>

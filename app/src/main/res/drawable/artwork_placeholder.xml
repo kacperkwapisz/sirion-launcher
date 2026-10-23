@@ -1,0 +1,4 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><solid android:color="@color/surface_inner" /><corners android:radius="10dp" /></shape></item>
+    <item android:drawable="@drawable/g_note_placeholder" android:gravity="center" android:width="48dp" android:height="48dp" />
+</layer-list>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home v4 · Media first + bottom bar (Paper: "Sirion head unit"). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <include layout="@layout/status_strip" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingHorizontal="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="282"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/music_card"
+                layout="@layout/card_music"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="606" />
+
+            <include
+                android:id="@+id/carplay_card"
+                layout="@layout/card_carplay"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="395" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="6dp"
+            android:layout_weight="188"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/phone_card"
+                layout="@layout/card_phone"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="375" />
+
+            <include
+                android:id="@+id/radio_card"
+                layout="@layout/card_radio"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="627" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <include layout="@layout/bottom_bar" />
+</LinearLayout>

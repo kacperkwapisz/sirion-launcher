@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone card: start a call without CarPlay. Three one-tap actions with labels. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Card"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:id="@+id/phone_mark"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_mark"
+            android:backgroundTint="@color/mark_phone">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:src="@drawable/g_phone"
+                android:tint="@color/text_on_light" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/phone_context"
+            style="@style/Text.Context"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end"
+            android:paddingStart="12dp" />
+    </LinearLayout>
+
+    <TextView
+        style="@style/Text.CardTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:text="@string/phone" />
+
+    <!-- Not connected: the one thing to do. -->
+    <LinearLayout
+        android:id="@+id/phone_connect"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_pill"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/g_plus" android:tint="@color/text_on_light" />
+
+        <TextView style="@style/Text.Button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="@string/connect_phone" android:textColor="@color/text_on_light" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/phone_actions"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/phone_favourites"
+            style="@style/PhoneAction">
+
+            <ImageView style="@style/PhoneActionGlyph" android:src="@drawable/g_star" />
+
+            <TextView style="@style/PhoneActionLabel" android:text="@string/favourites" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/phone_recents"
+            style="@style/PhoneAction"
+            android:layout_marginStart="6dp">
+
+            <ImageView style="@style/PhoneActionGlyph" android:src="@drawable/g_clock" />
+
+            <TextView style="@style/PhoneActionLabel" android:text="@string/recents" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/phone_contacts"
+            style="@style/PhoneAction"
+            android:layout_marginStart="6dp">
+
+            <ImageView style="@style/PhoneActionGlyph" android:src="@drawable/g_person" />
+
+            <TextView style="@style/PhoneActionLabel" android:text="@string/contacts" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

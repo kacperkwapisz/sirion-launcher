@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status strip, one content area filled in code, bottom bar. Apps and Unit apps. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <include layout="@layout/status_strip" />
+
+    <FrameLayout
+        android:id="@+id/tiles_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="8dp" />
+
+    <include layout="@layout/bottom_bar" />
+</LinearLayout>

@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Music · Playing / no artwork / nothing playing / in CarPlay (Paper: "Apps and media"). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <include layout="@layout/status_strip" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_card"
+        android:clipChildren="false"
+        android:orientation="horizontal"
+        android:padding="28dp">
+
+        <ImageView
+            android:id="@+id/player_artwork"
+            android:layout_width="420dp"
+            android:layout_height="420dp"
+            android:background="@drawable/artwork_placeholder_large"
+            android:clipToOutline="true"
+            android:scaleType="centerCrop" />
+
+        <!-- Top row, track, scrubber and controls, spread over the height. -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="32dp"
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <FrameLayout
+                    android:id="@+id/player_mark"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_mark"
+                    android:backgroundTint="@color/mark_bluetooth">
+
+                    <ImageView
+                        android:id="@+id/player_mark_glyph"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/brand_bluetooth" />
+                </FrameLayout>
+
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/player_source"
+                    style="@style/Text.ButtonSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="64dp"
+                    android:background="@drawable/bg_source_button"
+                    android:clickable="true"
+                    android:drawableEnd="@drawable/g_chevron_down"
+                    android:drawablePadding="10dp"
+                    android:drawableTint="@color/text_on_artwork"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="16dp" />
+            </LinearLayout>
+
+            <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/player_title"
+                style="@style/Text.Hero"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/player_artist"
+                style="@style/Text.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:maxLines="2" />
+
+            <TextView
+                android:id="@+id/player_album"
+                style="@style/Text.Context"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" />
+
+            <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <LinearLayout
+                android:id="@+id/player_progress_group"
+                android:clipChildren="false"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- The track runs the full column; the knob may overhang its ends. -->
+                <pl.perier.sirion.ui.Slider
+                    android:id="@+id/player_scrubber"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:max="1000"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:progressDrawable="@drawable/scrubber_track" />
+
+                <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp">
+                    <TextView android:id="@+id/player_elapsed" style="@style/Text.Small" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/text_on_artwork" />
+                    <TextView android:id="@+id/player_remaining" style="@style/Text.Small" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="end" android:textColor="@color/text_on_artwork" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <View
+                android:id="@+id/player_transport_gap"
+                android:layout_width="1dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Shuffle · previous · play/pause · next · repeat, edge to edge. -->
+            <LinearLayout
+                android:id="@+id/player_transport"
+                android:layout_width="match_parent"
+                android:layout_height="88dp"
+                android:layout_marginHorizontal="-14dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton android:id="@+id/player_shuffle" style="@style/TransportButton.Small" android:contentDescription="Shuffle" android:src="@drawable/g_shuffle" />
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+                <ImageButton android:id="@+id/player_prev" style="@style/TransportButton" android:contentDescription="Previous" android:src="@drawable/g_prev" />
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+                <!-- Same as the home card's controls: plain glyphs in 76px targets. -->
+                <ImageButton
+                    android:id="@+id/player_play_pause"
+                    style="@style/TransportButton"
+                    android:contentDescription="Play or pause"
+                    android:src="@drawable/g_pause" />
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+                <ImageButton android:id="@+id/player_next" style="@style/TransportButton" android:contentDescription="Next" android:src="@drawable/g_next" />
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+                <ImageButton android:id="@+id/player_repeat" style="@style/TransportButton.Small" android:contentDescription="Repeat" android:src="@drawable/g_repeat" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/player_empty_actions"
+                android:layout_width="match_parent"
+                android:layout_height="76dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/player_primary"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_pill"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/player_primary_glyph"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_marginEnd="10dp"
+                        android:src="@drawable/g_play"
+                        android:tint="@color/text_on_light" />
+
+                    <TextView
+                        android:id="@+id/player_primary_label"
+                        style="@style/Text.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_on_light" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/player_secondary"
+                    style="@style/Text.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_pill_dark"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <include layout="@layout/bottom_bar" />
+</LinearLayout>

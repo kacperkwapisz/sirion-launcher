@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Values from AGENTS.md. Every colour in the UI comes from here. -->
+<resources>
+    <color name="background">#FF000000</color>
+    <color name="surface_card">#FF1A1A1A</color>
+    <color name="surface_inner">#FF262626</color>
+    <color name="surface_track">#FF333333</color>
+    <color name="text_primary">#FFF4F4F2</color>
+    <color name="text_secondary">#FF9C9C99</color>
+    <color name="text_on_artwork">#FFC8C8C4</color>
+    <color name="text_on_light">#FF000000</color>
+    <color name="accent">#FFE8663D</color>
+    <color name="mark_radio">#FFE8663D</color>
+    <color name="mark_phone">#FF3DCB7C</color>
+    <color name="mark_bluetooth">#FF0082FC</color>
+    <color name="mark_neutral">#FF333333</color>
+    <!-- Outline of a paired but not connected phone. -->
+    <color name="text_muted">#FF6E6E6B</color>
+    <color name="connected">#FF3DCB7C</color>
+    <color name="danger">#FFE5484D</color>
+    <color name="scrubber_track">#40F4F4F2</color>
+</resources>

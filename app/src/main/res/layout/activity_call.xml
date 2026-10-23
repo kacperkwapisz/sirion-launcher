@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Call · Incoming / Calling / In call. Keeps the bottom bar: volume controls the call. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <include layout="@layout/status_strip" />
+
+    <LinearLayout
+        style="@style/Card"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_mark"
+                android:backgroundTint="@color/mark_phone">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/g_phone"
+                    android:tint="@color/text_on_light" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/call_context"
+                style="@style/Text.Context"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/call_initials"
+                style="@style/Text"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:background="@drawable/bg_dot"
+                android:backgroundTint="@color/surface_track"
+                android:fontFamily="@font/inter_tight_medium"
+                android:gravity="center"
+                android:textSize="36dp" />
+
+            <TextView
+                android:id="@+id/call_name"
+                style="@style/Text.Hero"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" />
+
+            <TextView
+                android:id="@+id/call_line"
+                style="@style/Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFeatureSettings="tnum"
+                android:textColor="@color/text_secondary"
+                android:textSize="22dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:orientation="horizontal">
+
+            <TextView android:id="@+id/call_decline" style="@style/CallButton.Danger" android:drawableStart="@drawable/g_hang_up" android:text="@string/decline" />
+            <TextView android:id="@+id/call_mute" style="@style/CallButton.Inner" android:layout_marginStart="8dp" android:drawableStart="@drawable/g_mic" android:text="@string/mute" />
+            <TextView android:id="@+id/call_keypad" style="@style/CallButton.Inner" android:layout_marginStart="8dp" android:drawableStart="@drawable/g_keypad" android:text="@string/keypad" />
+            <TextView android:id="@+id/call_use_phone" style="@style/CallButton.Inner" android:layout_marginStart="8dp" android:drawableStart="@drawable/g_handset" android:text="@string/use_phone" />
+            <TextView android:id="@+id/call_end" style="@style/CallButton.Danger" android:layout_marginStart="8dp" android:drawableStart="@drawable/g_hang_up" android:text="@string/end" />
+            <TextView android:id="@+id/call_answer" style="@style/CallButton.Answer" android:layout_marginStart="8dp" android:drawableStart="@drawable/g_phone_28" android:text="@string/answer" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <include layout="@layout/bottom_bar" />
+</LinearLayout>

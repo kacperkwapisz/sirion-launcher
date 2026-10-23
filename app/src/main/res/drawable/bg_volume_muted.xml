@@ -1,0 +1,4 @@
+<!-- Volume value while muted: #262626 pill, 96 × 64 inside the 76px touch target. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:insetTop="6dp" android:insetBottom="6dp">
+    <shape><solid android:color="@color/surface_inner" /><corners android:radius="32dp" /></shape>
+</inset>

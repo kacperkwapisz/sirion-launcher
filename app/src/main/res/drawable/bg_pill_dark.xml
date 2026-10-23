@@ -1,0 +1,5 @@
+<!-- Secondary button beside a white pill: same pill shape, inner-control fill. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true"><shape><solid android:color="@color/surface_track" /><corners android:radius="999dp" /></shape></item>
+    <item><shape><solid android:color="@color/surface_inner" /><corners android:radius="999dp" /></shape></item>
+</selector>

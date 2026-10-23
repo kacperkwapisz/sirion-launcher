@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone · Favourites / Recents / Contacts (Paper: "Phone and calls"). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <include layout="@layout/status_strip" />
+
+    <LinearLayout
+        style="@style/Card"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/phone_mark"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_mark"
+                android:backgroundTint="@color/mark_phone">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/g_phone"
+                    android:tint="@color/text_on_light" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/phone_context"
+                style="@style/Text.Context"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end" />
+        </LinearLayout>
+
+        <!-- Segmented control (track #262626, chosen accent) and the Keypad button. -->
+        <LinearLayout
+            android:id="@+id/phone_tabs_row"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/phone_tabs"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_inner"
+                android:orientation="horizontal"
+                android:padding="4dp">
+                <TextView android:id="@+id/tab_favourites" style="@style/Segment" android:text="@string/favourites" />
+                <TextView android:id="@+id/tab_recents" style="@style/Segment" android:layout_marginStart="4dp" android:text="@string/recents" />
+                <TextView android:id="@+id/tab_contacts" style="@style/Segment" android:layout_marginStart="4dp" android:text="@string/contacts" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/phone_keypad"
+                style="@style/Text.ButtonSmall"
+                android:layout_width="145dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_inner"
+                android:clickable="true"
+                android:drawableStart="@drawable/g_keypad_24"
+                android:drawablePadding="10dp"
+                android:drawableTint="@color/text_primary"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="@string/keypad" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="14dp"
+            android:layout_weight="1">
+
+            <ListView
+                android:id="@+id/phone_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@color/surface_inner"
+                android:dividerHeight="1dp"
+                android:listSelector="@android:color/transparent"
+                android:scrollbars="none" />
+
+            <LinearLayout
+                android:id="@+id/phone_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/phone_empty_glyph"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginBottom="12dp"
+                    android:tint="@color/text_secondary" />
+                <TextView
+                    android:id="@+id/phone_empty_title"
+                    style="@style/Text.CardTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/phone_empty_line"
+                    style="@style/Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="22dp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Not connected: no tabs, what to do, and the two ways to do it. -->
+        <LinearLayout
+            android:id="@+id/phone_disconnected"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <TextView style="@style/Text.Hero" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/no_phone" />
+
+            <TextView
+                style="@style/Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:maxLines="2"
+                android:text="@string/no_phone_line"
+                android:textColor="@color/text_secondary"
+                android:textSize="22dp" />
+
+            <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="76dp" android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/phone_connect_first"
+                    style="@style/Text.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_pill"
+                    android:drawableStart="@drawable/g_bluetooth_24"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="@color/text_on_light"
+                    android:gravity="center"
+                    android:paddingHorizontal="36dp"
+                    android:textColor="@color/text_on_light" />
+                <TextView
+                    android:id="@+id/phone_pair"
+                    style="@style/Text.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_pill_dark"
+                    android:gravity="center"
+                    android:paddingHorizontal="28dp"
+                    android:text="@string/pair_new_phone" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <include layout="@layout/bottom_bar" />
+</LinearLayout>

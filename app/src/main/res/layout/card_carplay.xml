@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CarPlay card (hero): is the iPhone ready, and one tap into CarPlay. The whole card is the button. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Tap"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_card"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/carplay_mark"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/brand_carplay" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <View
+            android:id="@+id/carplay_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_dot"
+            android:backgroundTint="@color/text_secondary" />
+
+        <TextView
+            android:id="@+id/carplay_context"
+            style="@style/Text.Context"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        style="@style/Text.Hero"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/carplay" />
+
+    <TextView
+        android:id="@+id/carplay_line"
+        style="@style/Text.Secondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:maxLines="2" />
+</LinearLayout>

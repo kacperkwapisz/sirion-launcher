@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings shell (Paper: Settings page). Category list 248px left, content cards right. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <include layout="@layout/status_strip" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp">
+
+        <LinearLayout
+            android:id="@+id/settings_categories"
+            android:layout_width="248dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingTop="8dp" />
+
+        <ScrollView
+            android:id="@+id/settings_scroll"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:fadingEdge="none"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <FrameLayout
+                android:id="@+id/settings_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp" />
+        </ScrollView>
+    </LinearLayout>
+
+    <include layout="@layout/bottom_bar" />
+</LinearLayout>

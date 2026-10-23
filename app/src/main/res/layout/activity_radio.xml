@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Radio · Playing / Seeking (Paper: "Apps and media"). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <include layout="@layout/status_strip" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp">
+
+        <LinearLayout
+            style="@style/Card"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_mark"
+                    android:backgroundTint="@color/mark_radio">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/g_radio"
+                        android:tint="@color/text_on_light" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tuner_context"
+                    style="@style/Text.Context"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end" />
+            </LinearLayout>
+
+            <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tuner_frequency"
+                    style="@style/Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/inter_tight_medium"
+                    android:fontFeatureSettings="tnum"
+                    android:letterSpacing="-0.02"
+                    android:textSize="72dp" />
+
+                <TextView
+                    style="@style/Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="MHz"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="22dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tuner_station"
+                style="@style/Text.CardTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/tuner_line"
+                style="@style/Text.Context"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" />
+
+            <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="76dp"
+                android:orientation="horizontal">
+
+                <ImageButton android:id="@+id/seek_down" style="@style/TuneButton" android:contentDescription="Seek down" android:src="@drawable/g_seek_down" />
+                <ImageButton android:id="@+id/step_down" style="@style/TuneButton" android:layout_marginStart="6dp" android:contentDescription="Step down" android:src="@drawable/g_back" />
+                <ImageButton android:id="@+id/step_up" style="@style/TuneButton" android:layout_marginStart="6dp" android:contentDescription="Step up" android:src="@drawable/g_chevron" />
+                <ImageButton android:id="@+id/seek_up" style="@style/TuneButton" android:layout_marginStart="6dp" android:contentDescription="Seek up" android:src="@drawable/g_seek_up" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/Card"
+            android:layout_width="400dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="6dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/Text.CardTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Presets" />
+
+                <TextView
+                    style="@style/Text.Context"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hold one to replace it" />
+            </LinearLayout>
+
+            <!-- Filled in code: four rows of two presets. -->
+            <LinearLayout
+                android:id="@+id/preset_grid"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="6dp"
+                android:layout_weight="1"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <include layout="@layout/bottom_bar" />
+</LinearLayout>

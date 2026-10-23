@@ -1,0 +1,5 @@
+<!-- Toggle track: 76 × 44, accent when on, track grey when off. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true"><shape><solid android:color="@color/accent" /><corners android:radius="22dp" /><size android:width="76dp" android:height="44dp" /></shape></item>
+    <item><shape><solid android:color="@color/surface_track" /><corners android:radius="22dp" /><size android:width="76dp" android:height="44dp" /></shape></item>
+</selector>

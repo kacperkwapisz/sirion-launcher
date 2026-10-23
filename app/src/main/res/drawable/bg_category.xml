@@ -1,0 +1,6 @@
+<!-- Settings category: active = card fill; pressed = card fill too. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true"><shape><solid android:color="@color/surface_card" /><corners android:radius="10dp" /></shape></item>
+    <item android:state_pressed="true"><shape><solid android:color="@color/surface_card" /><corners android:radius="10dp" /></shape></item>
+    <item><shape><solid android:color="#00000000" /><corners android:radius="10dp" /></shape></item>
+</selector>

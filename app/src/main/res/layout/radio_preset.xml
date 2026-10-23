@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preset button: frequency and station name. Playing = white fill, black text. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
+    android:background="@drawable/bg_inner"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingHorizontal="14dp">
+
+    <TextView
+        android:id="@+id/preset_frequency"
+        style="@style/Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter_tight_medium"
+        android:fontFeatureSettings="tnum"
+        android:textSize="22dp" />
+
+    <TextView
+        android:id="@+id/preset_name"
+        style="@style/Text.Small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp" />
+</LinearLayout>
