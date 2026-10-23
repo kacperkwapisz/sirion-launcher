@@ -48,5 +48,5 @@
     <string name="call">Call</string>
     <string name="back_to_call">Back to call</string>
     <string name="pair_new_phone">Pair a new phone</string>
-    <string name="volume_keys_description">Takes the unit\'s volume and mute buttons so Sirion shows its own volume card instead of Android\'s.</string>
+    <string name="volume_popup_description">Shows Sirion\'s volume card over any app when the volume changes, instead of Android\'s pop-up.</string>
 </resources>

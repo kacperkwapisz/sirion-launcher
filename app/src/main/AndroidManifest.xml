@@ -102,16 +102,16 @@
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode|density|fontScale"
             android:screenOrientation="landscape" />
 
-        <!-- The unit's volume and mute buttons, everywhere (see VolumeKeys). -->
+        <!-- Our volume card over any app when the volume changes (see VolumePopup). -->
         <service
-            android:name=".ui.VolumeKeys"
+            android:name=".ui.VolumePopup"
             android:exported="false"
-            android:label="Sirion volume buttons"
+            android:label="Sirion volume card"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
-            <meta-data android:name="android.accessibilityservice" android:resource="@xml/volume_keys" />
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/volume_popup" />
         </service>
     </application>
 </manifest>
