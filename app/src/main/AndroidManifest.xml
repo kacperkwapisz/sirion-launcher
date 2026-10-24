@@ -102,6 +102,17 @@
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode|density|fontScale"
             android:screenOrientation="landscape" />
 
+        <!-- Lets us read DiPlay's CarPlay song (see SessionAccess); allowed by the root helper. -->
+        <service
+            android:name=".data.SessionAccess"
+            android:exported="false"
+            android:label="Sirion CarPlay music"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Our volume card over any app when the volume changes (see VolumePopup). -->
         <service
             android:name=".ui.VolumePopup"

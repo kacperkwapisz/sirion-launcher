@@ -8,15 +8,17 @@ import pl.perier.sirion.logic.CarPlayStatus
 /**
  * The CarPlay engine is the one piece we can't replace yet. ZLink (the
  * unit's licensed receiver) or DiPlay (open source) runs the session; we
- * only read its state and open it.
+ * read its state and open it, and with DiPlay also its song.
  */
 object CarPlayEngine {
     val engines = listOf("com.shihab.diplay", "com.zjinnova.zlink")
 
-    fun status(): CarPlayStatus = if (Demo.carPlay) CarPlayStatus.Connected(Demo.PHONE) else CarPlayStatus.from(
+    /** [diPlaySession]: DiPlay has its CarPlay media session (see [CarPlayMusic]). */
+    fun status(diPlaySession: Boolean = false): CarPlayStatus = if (Demo.carPlay) CarPlayStatus.Connected(Demo.PHONE) else CarPlayStatus.from(
         connected = SystemProps.get("rw.zlink.connected"),
         phoneType = SystemProps.get("rw.zlink.phone.type"),
         bluetoothPhone = BluetoothPhones.connectedName(),
+        diPlaySession = diPlaySession,
     )
 
     /** Opens whichever engine is installed and enabled. Returns false if none is. */

@@ -18,6 +18,8 @@ import android.widget.TextView
 import pl.perier.sirion.R
 import pl.perier.sirion.SirionApp
 import pl.perier.sirion.data.BluetoothMusic
+import pl.perier.sirion.data.CarPlayMusic
+import pl.perier.sirion.data.MusicSource
 import pl.perier.sirion.data.BluetoothPhones
 import pl.perier.sirion.data.CarPlayEngine
 import pl.perier.sirion.logic.CarPlayStatus
@@ -25,13 +27,18 @@ import pl.perier.sirion.logic.MusicCard
 import pl.perier.sirion.logic.RadioPreset
 import pl.perier.sirion.logic.Tuner
 
-/** Music · full screen player for Bluetooth music, with the source picker. */
+/** Music · full screen player for Bluetooth music or CarPlay's song (through DiPlay), with the source picker. */
 class MusicActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private val radio get() = (application as SirionApp).radio
     private lateinit var bar: BottomBar
-    private lateinit var music: BluetoothMusic
+    private lateinit var bluetoothMusic: BluetoothMusic
+    private lateinit var carPlayMusic: CarPlayMusic
+    /** CarPlay's song while DiPlay runs a session, Bluetooth otherwise. */
+    private val music: MusicSource get() = if (carPlayMusic.active) carPlayMusic else bluetoothMusic
     private var dragging = false
+    /** Whether the playing source takes a seek (CarPlay doesn't). */
+    private var canSeek = true
     private var picker: Popover? = null
 
     private val ticker = object : Runnable {
@@ -44,8 +51,11 @@ class MusicActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_music)
+        // android:clipToOutline in XML needs Android 12; set here so the art keeps its rounded corners.
+        findViewById<View>(R.id.player_artwork).clipToOutline = true
         bar = BottomBar(this, BottomBar.Nav.APPS).also { it.bind() }
-        music = BluetoothMusic(this) { main.post(::render) }
+        bluetoothMusic = BluetoothMusic(this) { main.post(::render) }
+        carPlayMusic = CarPlayMusic(this) { main.post(::render) }
 
         findViewById<View>(R.id.player_prev).setOnClickListener { music.previous() }
         findViewById<View>(R.id.player_next).setOnClickListener { music.next() }
@@ -53,6 +63,7 @@ class MusicActivity : Activity() {
         findViewById<View>(R.id.player_shuffle).setOnClickListener { music.toggleShuffle() }
         findViewById<View>(R.id.player_repeat).setOnClickListener { music.toggleRepeat() }
         findViewById<View>(R.id.player_source).setOnClickListener { togglePicker() }
+        findViewById<SeekBar>(R.id.player_scrubber).setOnTouchListener { _, _ -> !canSeek }
         findViewById<SeekBar>(R.id.player_scrubber).setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(bar: SeekBar, value: Int, fromUser: Boolean) = Unit
             override fun onStartTrackingTouch(bar: SeekBar) { dragging = true }
@@ -68,7 +79,8 @@ class MusicActivity : Activity() {
         super.onResume()
         hideSystemBars()
         bar.resume()
-        music.start()
+        bluetoothMusic.start()
+        carPlayMusic.start()
         main.post(ticker)
     }
 
@@ -82,12 +94,16 @@ class MusicActivity : Activity() {
         bar.pause()
         picker?.dismiss()
         main.removeCallbacks(ticker)
-        music.stop()
+        bluetoothMusic.stop()
+        carPlayMusic.stop()
     }
 
     private fun render() {
-        val carPlay = CarPlayEngine.status() is CarPlayStatus.Connected
-        val state = MusicCard.from(carPlay, music.track, music.playing, music.positionMs)
+        val source = music
+        val carPlay = CarPlayEngine.status(diPlaySession = carPlayMusic.active) is CarPlayStatus.Connected
+        val state = MusicCard.from(carPlay, source.track, source.playing, source.positionMs, fromCarPlay = source === carPlayMusic)
+        // Real album art over the placeholder background; none from Bluetooth.
+        findViewById<ImageView>(R.id.player_artwork).setImageBitmap((state as? MusicCard.Playing)?.let { source.artwork })
         val phone = BluetoothPhones.connectedName()
         val onRadio = state == MusicCard.NothingPlaying && radio.playing
         findViewById<TextView>(R.id.player_source).text = when {
@@ -109,16 +125,20 @@ class MusicActivity : Activity() {
                 title.text = state.track.title
                 artist.text = state.track.artist
                 artist.setTextColor(getColor(R.color.text_secondary))
-                showAlbum(album, music.album)
+                showAlbum(album, source.album)
                 playing.forEach { it.visibility = View.VISIBLE }
                 empty.visibility = View.GONE
-                if (!dragging) findViewById<SeekBar>(R.id.player_scrubber).progress = (state.progress * 1000).toInt()
+                findViewById<SeekBar>(R.id.player_scrubber).apply {
+                    // CarPlay takes no seek from the car: same look, but the knob doesn't move by hand.
+                    canSeek = source.canSeek
+                    if (!dragging) progress = (state.progress * 1000).toInt()
+                }
                 findViewById<TextView>(R.id.player_elapsed).text = state.elapsed
                 findViewById<TextView>(R.id.player_remaining).text = state.remaining
                 findViewById<ImageButton>(R.id.player_play_pause)
                     .setImageResource(if (state.playing) R.drawable.g_pause else R.drawable.g_play)
-                showMode(findViewById(R.id.player_shuffle), music.shuffle)
-                showMode(findViewById(R.id.player_repeat), music.repeat)
+                showMode(findViewById(R.id.player_shuffle), source.shuffle)
+                showMode(findViewById(R.id.player_repeat), source.repeat)
             }
             MusicCard.NothingPlaying -> {
                 playing.forEach { it.visibility = View.GONE }
@@ -169,14 +189,14 @@ class MusicActivity : Activity() {
     }
 
     /** Shuffle and repeat: accent when on, grey when off, track grey and not tappable when the phone doesn't offer it. */
-    private fun showMode(button: ImageButton, mode: BluetoothMusic.Mode) {
+    private fun showMode(button: ImageButton, mode: MusicSource.Mode) {
         val tint = when (mode) {
-            BluetoothMusic.Mode.ON -> R.color.accent
-            BluetoothMusic.Mode.OFF -> R.color.text_secondary
-            BluetoothMusic.Mode.UNAVAILABLE -> R.color.surface_track
+            MusicSource.Mode.ON -> R.color.accent
+            MusicSource.Mode.OFF -> R.color.text_secondary
+            MusicSource.Mode.UNAVAILABLE -> R.color.surface_track
         }
         button.imageTintList = ColorStateList.valueOf(getColor(tint))
-        button.isEnabled = mode != BluetoothMusic.Mode.UNAVAILABLE
+        button.isEnabled = mode != MusicSource.Mode.UNAVAILABLE
     }
 
     private fun showMark(carPlay: Boolean, onRadio: Boolean, live: Boolean) {

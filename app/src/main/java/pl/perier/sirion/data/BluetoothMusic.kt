@@ -5,11 +5,13 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothProfile
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
 import android.media.MediaMetadata
 import android.media.browse.MediaBrowser
 import android.media.session.MediaController
 import android.media.session.PlaybackState
 import android.os.SystemClock
+import pl.perier.sirion.data.MusicSource.Mode
 import pl.perier.sirion.logic.Track
 
 /**
@@ -17,10 +19,7 @@ import pl.perier.sirion.logic.Track
  * normal media session. Android 8.1 sends no cover art over Bluetooth, so
  * there is never artwork from here.
  */
-class BluetoothMusic(private val context: Context, private val onChange: () -> Unit) {
-    /** Shuffle or repeat as the phone reports it; unavailable when the phone doesn't offer it over Bluetooth. */
-    enum class Mode { UNAVAILABLE, OFF, ON }
-
+class BluetoothMusic(private val context: Context, private val onChange: () -> Unit) : MusicSource {
     private var controller: MediaController? = null
     private var avrcp: BluetoothProfile? = null
 
@@ -50,7 +49,7 @@ class BluetoothMusic(private val context: Context, private val onChange: () -> U
         null,
     )
 
-    fun start() {
+    override fun start() {
         if (!browser.isConnected) runCatching { browser.connect() }
         if (avrcp == null) BluetoothAdapter.getDefaultAdapter()?.getProfileProxy(context, object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) { avrcp = proxy; onChange() }
@@ -58,7 +57,7 @@ class BluetoothMusic(private val context: Context, private val onChange: () -> U
         }, AVRCP_CONTROLLER)
     }
 
-    fun stop() {
+    override fun stop() {
         controller?.unregisterCallback(callback)
         controller = null
         if (browser.isConnected) browser.disconnect()
@@ -66,7 +65,7 @@ class BluetoothMusic(private val context: Context, private val onChange: () -> U
         avrcp = null
     }
 
-    val track: Track?
+    override val track: Track?
         get() {
             if (Demo.on) return Demo.track
             val metadata = controller?.metadata ?: return null
@@ -77,16 +76,21 @@ class BluetoothMusic(private val context: Context, private val onChange: () -> U
             )
         }
 
-    val album: String get() = if (Demo.on) Demo.ALBUM else controller?.metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM).orEmpty()
+    /** Android 8.1 gets no cover art over Bluetooth. */
+    override val artwork: Bitmap? get() = null
 
-    fun seekTo(ms: Long) = controller?.transportControls?.seekTo(ms)
+    override val canSeek: Boolean get() = true
 
-    fun play() = controller?.transportControls?.play()
+    override val album: String get() = if (Demo.on) Demo.ALBUM else controller?.metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM).orEmpty()
 
-    val playing: Boolean get() = Demo.on || controller?.playbackState?.state == PlaybackState.STATE_PLAYING
+    override fun seekTo(ms: Long) { controller?.transportControls?.seekTo(ms) }
+
+    override fun play() { controller?.transportControls?.play() }
+
+    override val playing: Boolean get() = Demo.on || controller?.playbackState?.state == PlaybackState.STATE_PLAYING
 
     /** Position now, extrapolated from the last report while playing. */
-    val positionMs: Long
+    override val positionMs: Long
         get() {
             if (Demo.on) return Demo.POSITION_MS
             val state = controller?.playbackState ?: return 0
@@ -96,23 +100,23 @@ class BluetoothMusic(private val context: Context, private val onChange: () -> U
             return state.position + (since * state.playbackSpeed).toLong()
         }
 
-    fun playPause() {
+    override fun playPause() {
         val controls = controller?.transportControls ?: return
         if (playing) controls.pause() else controls.play()
     }
 
-    fun next() = controller?.transportControls?.skipToNext()
+    override fun next() { controller?.transportControls?.skipToNext() }
 
-    fun previous() = controller?.transportControls?.skipToPrevious()
+    override fun previous() { controller?.transportControls?.skipToPrevious() }
 
     // Shuffle and repeat go through the hidden AVRCP controller's player
     // application settings. Many phones (iPhones included) may not offer them.
 
-    val shuffle: Mode get() = mode("SETTING_SHUFFLE")
-    val repeat: Mode get() = mode("SETTING_REPEAT")
+    override val shuffle: Mode get() = mode("SETTING_SHUFFLE")
+    override val repeat: Mode get() = mode("SETTING_REPEAT")
 
-    fun toggleShuffle() = toggle("SETTING_SHUFFLE", shuffle)
-    fun toggleRepeat() = toggle("SETTING_REPEAT", repeat)
+    override fun toggleShuffle() = toggle("SETTING_SHUFFLE", shuffle)
+    override fun toggleRepeat() = toggle("SETTING_REPEAT", repeat)
 
     private val settingsClass by lazy { runCatching { Class.forName("android.bluetooth.BluetoothAvrcpPlayerSettings") }.getOrNull() }
     private fun constant(name: String) = settingsClass!!.getField(name).getInt(null)

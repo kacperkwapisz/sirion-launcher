@@ -2,6 +2,7 @@ package pl.perier.sirion.ui
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.view.Gravity
@@ -238,6 +239,8 @@ class Kit(val context: Context) {
         available: Boolean = true,
         live: Boolean = available,
         dot: Int? = null,
+        /** Live content for the empty middle, only when it's real (album art, the camera). */
+        middle: View? = null,
         onClick: (() -> Unit)?,
     ) = LinearLayout(this.context).apply {
         orientation = LinearLayout.VERTICAL
@@ -259,6 +262,10 @@ class Kit(val context: Context) {
         }
         addView(top)
         addView(View(this.context), LinearLayout.LayoutParams(1, 0, 1f))
+        middle?.let {
+            addView(it)
+            addView(View(this.context), LinearLayout.LayoutParams(1, 0, 1f))
+        }
         addView(text(R.style.Text_CardTitle, title).apply {
             if (!available) setTextColor(color(R.color.text_secondary))
         })
@@ -270,6 +277,15 @@ class Kit(val context: Context) {
     }
 
     /** Stacks cards with the 6px gap. */
+    /** A tile's album art: 96px square, corners 8. */
+    fun tileArtwork(bitmap: Bitmap) = ImageView(context).apply {
+        setImageBitmap(bitmap)
+        scaleType = ImageView.ScaleType.CENTER_CROP
+        background = GradientDrawable().apply { cornerRadius = dp(8).toFloat(); setColor(color(R.color.surface_inner)) }
+        clipToOutline = true
+        layoutParams = LinearLayout.LayoutParams(dp(96), dp(96))
+    }
+
     fun column(vararg views: View?) = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         views.filterNotNull().forEachIndexed { i, v ->

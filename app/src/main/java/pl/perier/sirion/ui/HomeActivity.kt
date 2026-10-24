@@ -21,6 +21,8 @@ import pl.perier.sirion.R
 import pl.perier.sirion.ui.settings.SettingsActivity
 import pl.perier.sirion.SirionApp
 import pl.perier.sirion.data.BluetoothMusic
+import pl.perier.sirion.data.CarPlayMusic
+import pl.perier.sirion.data.MusicSource
 import pl.perier.sirion.data.BluetoothPhones
 import pl.perier.sirion.data.CarPlayEngine
 import pl.perier.sirion.data.RootHelper
@@ -34,7 +36,10 @@ import pl.perier.sirion.logic.Tuner
 /** Home v4 · Media first + bottom bar. */
 class HomeActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
-    private lateinit var music: BluetoothMusic
+    private lateinit var bluetoothMusic: BluetoothMusic
+    private lateinit var carPlayMusic: CarPlayMusic
+    /** CarPlay's song while DiPlay runs a session, Bluetooth otherwise. */
+    private val music: MusicSource get() = if (carPlayMusic.active) carPlayMusic else bluetoothMusic
     private lateinit var helper: RootHelper
     private lateinit var updater: Updater
 
@@ -64,7 +69,11 @@ class HomeActivity : Activity() {
         setContentView(R.layout.activity_home)
         // The D was only for the cold start; behind the cards it's plain black.
         window.setBackgroundDrawableResource(R.color.background)
-        music = BluetoothMusic(this) { main.post(::refreshMusic) }
+        // android:clipToOutline in XML needs Android 12; set here so the art keeps the rounded corners.
+        listOf(R.id.music_card, R.id.music_artwork).forEach { findViewById<View>(it).clipToOutline = true }
+        bluetoothMusic = BluetoothMusic(this) { main.post(::refreshMusic) }
+        // A DiPlay session starting or ending changes the CarPlay card too.
+        carPlayMusic = CarPlayMusic(this) { main.post { refreshCarPlay(); refreshMusic() } }
         val app = application as SirionApp
         helper = app.helper
         updater = app.updater
@@ -86,7 +95,8 @@ class HomeActivity : Activity() {
             addAction("android.bluetooth.device.action.ACL_DISCONNECTED")
             addAction("android.bluetooth.adapter.action.STATE_CHANGED")
         })
-        music.start()
+        bluetoothMusic.start()
+        carPlayMusic.start()
         updater.checkSoon()
         main.post(ticker)
     }
@@ -101,7 +111,8 @@ class HomeActivity : Activity() {
         bar.pause()
         unregisterReceiver(connectionEvents)
         main.removeCallbacks(ticker)
-        music.stop()
+        bluetoothMusic.stop()
+        carPlayMusic.stop()
     }
 
     override fun onDestroy() {
@@ -136,7 +147,7 @@ class HomeActivity : Activity() {
         startActivity(Intent(this, PhoneActivity::class.java).putExtra(PhoneActivity.EXTRA_TAB, tab))
 
     private fun refreshCarPlay() {
-        carPlay = CarPlayEngine.status()
+        carPlay = CarPlayEngine.status(diPlaySession = carPlayMusic.active)
         findViewById<ImageView>(R.id.carplay_mark).alpha = if (carPlay.live) 1f else DIMMED
         findViewById<View>(R.id.carplay_dot).backgroundTintList =
             ColorStateList.valueOf(getColor(if (carPlay.live) R.color.connected else R.color.text_secondary))
@@ -152,16 +163,28 @@ class HomeActivity : Activity() {
     }
 
     private fun refreshMusic() {
-        val state = MusicCard.from(carPlay is CarPlayStatus.Connected, music.track, music.playing, music.positionMs)
+        val source = music
+        val state = MusicCard.from(carPlay is CarPlayStatus.Connected, source.track, source.playing, source.positionMs, fromCarPlay = source === carPlayMusic)
         val title = findViewById<TextView>(R.id.music_title)
         val line = findViewById<TextView>(R.id.music_line)
         val action = findViewById<TextView>(R.id.music_action)
         val playingViews = listOf(R.id.music_progress_group, R.id.music_transport).map { findViewById<View>(it) }
         val markGlyph = findViewById<ImageView>(R.id.music_mark_glyph)
-        findViewById<View>(R.id.music_artwork).visibility = if (SHOW_ARTWORK && state is MusicCard.Playing) View.VISIBLE else View.GONE
-        // Without the square, the title and artist get the whole width.
+        // The square only for real album art (CarPlay through DiPlay); Bluetooth never sends any,
+        // and then the title and artist get the whole width.
+        val artwork = (state as? MusicCard.Playing)?.let { source.artwork }
+        findViewById<ImageView>(R.id.music_artwork).apply {
+            setImageBitmap(artwork)
+            visibility = if (artwork != null) View.VISIBLE else View.GONE
+        }
+        // The same art dimmed behind the whole card, with the scrim that keeps the text readable.
+        findViewById<ImageView>(R.id.music_background).apply {
+            setImageBitmap(artwork)
+            visibility = if (artwork != null) View.VISIBLE else View.GONE
+        }
+        findViewById<View>(R.id.music_scrim).visibility = if (artwork != null) View.VISIBLE else View.GONE
         listOf(title, line).forEach { view ->
-            view.layoutParams = (view.layoutParams as ViewGroup.MarginLayoutParams).apply { marginEnd = if (SHOW_ARTWORK) ARTWORK_LANE else 0 }
+            view.layoutParams = (view.layoutParams as ViewGroup.MarginLayoutParams).apply { marginEnd = if (artwork != null) ARTWORK_LANE else 0 }
         }
         val mark = findViewById<View>(R.id.music_mark)
 
@@ -176,7 +199,7 @@ class HomeActivity : Activity() {
                 findViewById<TextView>(R.id.music_remaining).text = state.remaining
                 findViewById<ImageButton>(R.id.music_play_pause)
                     .setImageResource(if (state.playing) R.drawable.g_pause else R.drawable.g_play)
-                showMark(mark, markGlyph, carPlayMark = false, live = true)
+                showMark(mark, markGlyph, carPlayMark = state.fromCarPlay, live = true)
             }
             MusicCard.NothingPlaying -> {
                 val first = radio.presets.firstOrNull { it != null } ?: RadioPreset.defaults.first()
@@ -196,7 +219,6 @@ class HomeActivity : Activity() {
                 line.text = (carPlay as? CarPlayStatus.Connected)?.phone ?: "iPhone"
                 playingViews.forEach { it.visibility = View.GONE }
                 action.visibility = View.GONE
-                findViewById<View>(R.id.music_artwork).visibility = if (SHOW_ARTWORK) View.VISIBLE else View.GONE
                 showMark(mark, markGlyph, carPlayMark = true, live = true)
             }
         }
@@ -245,12 +267,6 @@ class HomeActivity : Activity() {
     }
 
     private companion object {
-        /**
-         * The artwork square on the home music card. Off: Bluetooth on this unit
-         * never sends cover art, so it was always the placeholder, and the title
-         * reads better with the room. Turn on again if artwork ever arrives.
-         */
-        const val SHOW_ARTWORK = false
         /** Room the square takes next to the title (128px square + 20px gap). */
         const val ARTWORK_LANE = 148
         const val DIMMED = 0.45f

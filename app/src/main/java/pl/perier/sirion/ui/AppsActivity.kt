@@ -14,6 +14,8 @@ import android.widget.LinearLayout
 import pl.perier.sirion.R
 import pl.perier.sirion.SirionApp
 import pl.perier.sirion.data.BluetoothMusic
+import pl.perier.sirion.data.CarPlayMusic
+import pl.perier.sirion.data.MusicSource
 import pl.perier.sirion.data.BluetoothPhones
 import pl.perier.sirion.data.CarPlayEngine
 import pl.perier.sirion.data.PhoneBook
@@ -29,7 +31,10 @@ class AppsActivity : Activity() {
     private val app get() = application as SirionApp
     private lateinit var kit: Kit
     private lateinit var bar: BottomBar
-    private lateinit var music: BluetoothMusic
+    private lateinit var bluetoothMusic: BluetoothMusic
+    private lateinit var carPlayMusic: CarPlayMusic
+    /** CarPlay's song while DiPlay runs a session, Bluetooth otherwise. */
+    private val music: MusicSource get() = if (carPlayMusic.active) carPlayMusic else bluetoothMusic
 
     private val ticker = object : Runnable {
         override fun run() {
@@ -43,14 +48,16 @@ class AppsActivity : Activity() {
         setContentView(R.layout.activity_tiles)
         kit = Kit(this)
         bar = BottomBar(this, BottomBar.Nav.APPS).also { it.bind() }
-        music = BluetoothMusic(this) { main.post(::render) }
+        bluetoothMusic = BluetoothMusic(this) { main.post(::render) }
+        carPlayMusic = CarPlayMusic(this) { main.post(::render) }
     }
 
     override fun onResume() {
         super.onResume()
         hideSystemBars()
         bar.resume()
-        music.start()
+        bluetoothMusic.start()
+        carPlayMusic.start()
         main.post(ticker)
     }
 
@@ -62,7 +69,8 @@ class AppsActivity : Activity() {
     override fun onPause() {
         super.onPause()
         bar.pause()
-        music.stop()
+        bluetoothMusic.stop()
+        carPlayMusic.stop()
         main.removeCallbacks(ticker)
     }
 
@@ -83,7 +91,7 @@ class AppsActivity : Activity() {
     }
 
     private fun carPlay(): View {
-        val status = CarPlayEngine.status()
+        val status = CarPlayEngine.status(diPlaySession = carPlayMusic.active)
         val line = when (status) {
             is CarPlayStatus.Connected -> status.phone ?: "iPhone"
             is CarPlayStatus.NotStarted -> status.phone
@@ -96,14 +104,17 @@ class AppsActivity : Activity() {
     }
 
     private fun music(): View {
-        val track = music.track
+        val source = music
+        val track = source.track?.takeIf { it.title.isNotBlank() }
         val context = when {
             track == null -> "Nothing playing"
-            music.playing -> "Playing"
+            source.playing -> "Playing"
             else -> "Paused"
         }
-        val mark = kit.mark(R.drawable.brand_bluetooth, R.color.mark_bluetooth, glyphTint = R.color.text_primary, glyphSize = 18)
-        return kit.tile(mark, context, "Music", track?.title ?: "Start music on your phone", live = track != null) {
+        val mark = if (source === carPlayMusic) ImageView(this).apply { setImageResource(R.drawable.brand_carplay) }
+            else kit.mark(R.drawable.brand_bluetooth, R.color.mark_bluetooth, glyphTint = R.color.text_primary, glyphSize = 18)
+        val art = source.artwork?.takeIf { track != null }?.let(kit::tileArtwork)
+        return kit.tile(mark, context, "Music", track?.title ?: "Start music on your phone", live = track != null, middle = art) {
             startActivity(Intent(this, MusicActivity::class.java))
         }
     }

@@ -40,4 +40,17 @@ class MusicCardTest {
         assertEquals(MusicCard.NothingPlaying, MusicCard.from(carPlayConnected = false, track = empty, playing = false, positionMs = 0))
         assertEquals(MusicCard.NothingPlaying, MusicCard.from(carPlayConnected = false, track = null, playing = false, positionMs = 0))
     }
+
+    @Test
+    fun aCarPlaySongFromDiPlayShowsLikeAnyOtherSong() {
+        // DiPlay hands over CarPlay's song, so the card can show it instead of handing over.
+        val state = MusicCard.from(carPlayConnected = true, track = track, playing = true, positionMs = 99_000, fromCarPlay = true)
+        assertEquals(MusicCard.Playing(track, playing = true, elapsed = "1:39", remaining = "−2:24", progress = 99f / 243f, fromCarPlay = true), state)
+    }
+
+    @Test
+    fun carPlayWithNoSongYetStillHandsOver() {
+        val empty = Track(title = "", artist = "", durationMs = 0)
+        assertEquals(MusicCard.InCarPlay, MusicCard.from(carPlayConnected = true, track = empty, playing = false, positionMs = 0, fromCarPlay = true))
+    }
 }

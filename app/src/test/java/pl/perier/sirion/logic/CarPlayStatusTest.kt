@@ -43,4 +43,11 @@ class CarPlayStatusTest {
         assertEquals("Searching for iPhone", CarPlayStatus.Searching.context)
         assertEquals("Turn on Bluetooth and Wi-Fi on your iPhone", CarPlayStatus.Searching.line)
     }
+
+    @Test
+    fun aDiPlaySessionCountsAsConnected() {
+        // DiPlay sets no ZLink properties; its CarPlay media session is the sign.
+        val status = CarPlayStatus.from(connected = "", phoneType = "", bluetoothPhone = "Kacper's iPhone", diPlaySession = true)
+        assertEquals(CarPlayStatus.Connected("Kacper's iPhone"), status)
+    }
 }

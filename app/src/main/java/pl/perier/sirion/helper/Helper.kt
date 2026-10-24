@@ -84,6 +84,8 @@ object Helper {
         }
         reapplyMysplBlock()
         thread(isDaemon = true, name = "volume-card") { runCatching { ensureVolumeCard() }.onFailure { broadcast("error volume ${it.message}") } }
+        // Lets the launcher read CarPlay's song from DiPlay (see CarPlayMusic).
+        sh("cmd notification allow_listener $PACKAGE/$PACKAGE.data.SessionAccess")
         watchCarPlay()
         while (true) {
             val client = server.accept()
