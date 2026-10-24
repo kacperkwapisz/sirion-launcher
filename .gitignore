@@ -6,6 +6,7 @@ dist/
 app/src/main/assets/hu-brightnessd
 app/src/main/assets/hu-bindro
 app/src/main/assets/no-volume-dialog.apk
+app/src/main/assets/bootanimation.zip
 .kotlin/
 screenshot*.png
 screenshots-*.png

@@ -29,6 +29,12 @@ object Helper {
     private const val HOME = "$PACKAGE/.ui.HomeActivity"
     /** Turns off Android's volume pop-up (see launcher/overlays/no-volume-dialog). */
     private const val OVERLAY = "pl.perier.sirion.novolumedialog"
+    /** The audio chip's main input selector (Autochips effect id) and its inputs. */
+    private const val SOURCE_SELECTOR_MAIN = 34
+    private const val INPUT_RADIO = 0
+    private const val INPUT_ANDROID = 2
+    /** The vendor's switch to the custom startup animation in /data/data. */
+    private const val STARTUP_PROPERTY = "persist.vendor.xy.bootanimselectover"
     private val previousApk = File("/data/local/tmp/sirion-previous.apk")
     private val stagedApk = File("/data/local/tmp/sirion-update.apk")
     private val updateScript = File("/data/local/tmp/sirion-update.sh")
@@ -84,6 +90,7 @@ object Helper {
         }
         reapplyMysplBlock()
         thread(isDaemon = true, name = "volume-card") { runCatching { ensureVolumeCard() }.onFailure { broadcast("error volume ${it.message}") } }
+        thread(isDaemon = true, name = "startup-screen") { runCatching { ensureStartupScreen() }.onFailure { broadcast("error startup ${it.message}") } }
         // Lets the launcher read CarPlay's song from DiPlay (see CarPlayMusic).
         sh("cmd notification allow_listener $PACKAGE/$PACKAGE.data.SessionAccess")
         watchCarPlay()
@@ -120,6 +127,8 @@ object Helper {
                 if (command.up) radio.seekUp(lastKilohertz) else radio.seekDown(lastKilohertz)
             }
             HelperCommand.RadioOff -> if (radioOpen) {
+                // Back to Android's audio (input 2), as the system does when the radio closes.
+                runCatching { AudioChip.set(SOURCE_SELECTOR_MAIN, INPUT_ANDROID) }
                 radio.setAudioToGps()
                 radio.stopListening()
                 radio.closeDevice()
@@ -172,6 +181,28 @@ object Helper {
         val run = "sh ${updateScript.path} ${stagedApk.path} ${previousApk.path} ${healthyMark.path} ${HEALTH_WINDOW_MS / 1000}"
         // Its own session and no pipes back to us, so it outlives this process.
         sh("if command -v setsid >/dev/null; then setsid $run; else nohup $run; fi </dev/null >/dev/null 2>&1 &")
+    }
+
+    /**
+     * Our startup animation (the Daihatsu D) instead of Android's. The unit's
+     * boot animation player reads /data/data/bootanimation.zip only while
+     * persist.vendor.xy.bootanimselectover is 1, and otherwise the system's
+     * own, which beats /data/local. This is what the vendor's logo picker
+     * does, minus its broadcast (that one can reach the myspl tool).
+     */
+    private fun ensureStartupScreen() {
+        val apk = System.getenv("CLASSPATH") ?: return
+        val target = File("/data/data/bootanimation.zip")
+        java.util.zip.ZipFile(apk).use { zip ->
+            val entry = zip.getEntry("assets/bootanimation.zip") ?: return
+            if (!target.isFile || target.length() != entry.size) {
+                val staged = File("/data/data/bootanimation.zip.new")
+                zip.getInputStream(entry).use { input -> staged.outputStream().use(input::copyTo) }
+                staged.setReadable(true, false)
+                staged.renameTo(target)
+            }
+        }
+        if (sh("getprop $STARTUP_PROPERTY").trim() != "1") sh("setprop $STARTUP_PROPERTY 1")
     }
 
     /**
@@ -288,6 +319,10 @@ object Helper {
     }.getOrDefault("")
 
     private fun ensureRadioOpen() {
+        // The tuner plays into the audio chip's input 0; the speakers only hear it once the
+        // chip's main input is switched there (the vendor radio does this on every start).
+        // Every time, in case something switched it back to Android meanwhile.
+        runCatching { AudioChip.set(SOURCE_SELECTOR_MAIN, INPUT_RADIO) }
         if (radioOpen) return
         radio.listen()
         radio.openDevice()
