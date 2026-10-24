@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Turns off the system UI's own volume pop-up (SystemUI reads enable_volume_ui
+  once at start). The launcher shows its own volume card instead. A normal
+  app in /data, enabled with `cmd overlay enable`; nothing touches /system.
+  Undo: adb shell cmd overlay disable pl.perier.sirion.novolumedialog
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="pl.perier.sirion.novolumedialog"
+    android:versionCode="1"
+    android:versionName="1">
+    <overlay android:targetPackage="com.android.systemui" android:priority="1" />
+    <application android:hasCode="false" android:label="Sirion: no stock volume pop-up" />
+</manifest>

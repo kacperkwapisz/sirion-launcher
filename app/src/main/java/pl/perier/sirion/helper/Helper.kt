@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.net.LocalServerSocket
 import android.net.LocalSocket
 import android.os.Looper
+import pl.perier.sirion.logic.AccessibilityServices
 import pl.perier.sirion.logic.HelperCommand
 import java.io.File
 import java.io.PrintWriter
@@ -26,6 +27,8 @@ object Helper {
 
     private const val PACKAGE = "pl.perier.sirion"
     private const val HOME = "$PACKAGE/.ui.HomeActivity"
+    /** Turns off Android's volume pop-up (see launcher/overlays/no-volume-dialog). */
+    private const val OVERLAY = "pl.perier.sirion.novolumedialog"
     private val previousApk = File("/data/local/tmp/sirion-previous.apk")
     private val stagedApk = File("/data/local/tmp/sirion-update.apk")
     private val updateScript = File("/data/local/tmp/sirion-update.sh")
@@ -80,6 +83,7 @@ object Helper {
             return
         }
         reapplyMysplBlock()
+        thread(isDaemon = true, name = "volume-card") { runCatching { ensureVolumeCard() }.onFailure { broadcast("error volume ${it.message}") } }
         watchCarPlay()
         while (true) {
             val client = server.accept()
@@ -166,6 +170,36 @@ object Helper {
         val run = "sh ${updateScript.path} ${stagedApk.path} ${previousApk.path} ${healthyMark.path} ${HEALTH_WINDOW_MS / 1000}"
         // Its own session and no pipes back to us, so it outlives this process.
         sh("if command -v setsid >/dev/null; then setsid $run; else nohup $run; fi </dev/null >/dev/null 2>&1 &")
+    }
+
+    /**
+     * Our volume card instead of Android's pop-up, set up on its own so it
+     * comes with an update: the card's accessibility service on, and the
+     * overlay (shipped in our assets) installed and enabled. Android only
+     * notices a new overlay at boot, so the pop-up goes after the next restart.
+     */
+    private fun ensureVolumeCard() {
+        val services = sh("settings get secure enabled_accessibility_services").trim()
+        val wanted = AccessibilityServices.withVolumePopup(services)
+        if (wanted != services) sh("settings put secure enabled_accessibility_services '$wanted'")
+        sh("settings put secure accessibility_enabled 1")
+
+        if (sh("pm path $OVERLAY").isBlank()) {
+            val apk = System.getenv("CLASSPATH") ?: return
+            val copy = File("/data/local/tmp/sirion-no-volume-dialog.apk")
+            java.util.zip.ZipFile(apk).use { zip ->
+                val entry = zip.getEntry("assets/no-volume-dialog.apk") ?: return
+                zip.getInputStream(entry).use { input -> copy.outputStream().use(input::copyTo) }
+            }
+            sh("pm install -r ${copy.path}")
+            copy.delete()
+        }
+        val overlays = sh("cmd overlay list")
+        if ("[ ] $OVERLAY" in overlays) {
+            sh("cmd overlay enable $OVERLAY")
+            // The system UI reads it when it starts; the screen blinks once.
+            sh("pkill -f com.android.systemui")
+        }
     }
 
     /**
