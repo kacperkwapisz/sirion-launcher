@@ -108,7 +108,7 @@ class RadioStore(context: Context, private val helper: RootHelper) {
             AudioManager.AUDIOFOCUS_LOSS -> { hasFocus = false; off() }
             // A prompt or a call: let Android's audio through until it's done.
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ->
-                helper.send(HelperCommand.Effect(SOURCE_SELECTOR_MAIN, INPUT_ANDROID))
+                helper.send(HelperCommand.Effect(HelperCommand.SOURCE_SELECTOR, INPUT_ANDROID))
             AudioManager.AUDIOFOCUS_GAIN -> if (playing) helper.send(HelperCommand.Tune(kilohertz))
         }
     }
@@ -134,8 +134,7 @@ class RadioStore(context: Context, private val helper: RootHelper) {
     private fun changed() = listeners.toList().forEach { it() }
 
     private companion object {
-        /** The audio chip's main input selector and Android's input (see the root helper). */
-        const val SOURCE_SELECTOR_MAIN = 34
+        /** Android's input on the audio chip's main selector (see the root helper). */
         const val INPUT_ANDROID = 2
         const val KEY_LAST = "last_khz"
         const val KEY_PRESETS = "presets"

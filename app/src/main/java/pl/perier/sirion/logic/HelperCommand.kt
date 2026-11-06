@@ -14,7 +14,10 @@ sealed class HelperCommand(val line: String) {
     /** Backlight mode (auto, day, night) and the two levels, 0-255. */
     data class Brightness(val mode: String, val day: Int, val night: Int) : HelperCommand("brightness $mode $day $night")
 
-    /** One value on the TDA7729 audio chip: tone bands 10/14/17 (±15 dB) or speaker trims 0-3 (0 to -80 dB). */
+    /**
+     * One value on the TDA7729 audio chip: tone bands 10/14/17 (±15 dB), speaker trims 0-3
+     * (0 to -80 dB), or the main input selector 34 (0 = the tuner, 2 = Android).
+     */
     data class Effect(val id: Int, val value: Int) : HelperCommand("effect $id $value")
 
     /** Makes the unit visible to phones for two minutes, for pairing. */
@@ -24,6 +27,9 @@ sealed class HelperCommand(val line: String) {
     data class ConfirmPairing(val address: String, val accept: Boolean) :
         HelperCommand("bluetooth pair $address ${if (accept) "yes" else "no"}")
 
+    /** Answers a phone's PIN pairing request with this PIN (digits only). */
+    data class PairingPin(val address: String, val pin: String) : HelperCommand("bluetooth pin $address $pin")
+
     data class Clock24(val on: Boolean) : HelperCommand(if (on) "clock 24" else "clock 12")
 
     object Restart : HelperCommand("restart")
@@ -32,8 +38,11 @@ sealed class HelperCommand(val line: String) {
     object UnstickBluetooth : HelperCommand("bluetooth unstick")
 
     companion object {
-        /** Updates may only be installed from the launcher's own cache folder. */
-        const val UPDATE_DIR = "/data/user/0/pl.perier.sirion/cache/ota/"
+        /** Updates may only be installed from this folder; the launcher downloads them here. */
+        const val UPDATE_DIR = "/data/user/0/pl.perier.sirion/files/ota/"
+
+        /** The audio chip's main input selector (see [Effect]). */
+        const val SOURCE_SELECTOR = 34
 
         fun tune(preset: RadioPreset) = Tune(preset.centiMhz * 10)
 
@@ -51,6 +60,8 @@ sealed class HelperCommand(val line: String) {
                 parts == listOf("bluetooth", "visible") -> Discoverable
                 parts.size == 4 && parts[0] == "bluetooth" && parts[1] == "pair" && MAC.matches(parts[2]) && parts[3] in listOf("yes", "no") ->
                     ConfirmPairing(parts[2], parts[3] == "yes")
+                parts.size == 4 && parts[0] == "bluetooth" && parts[1] == "pin" && MAC.matches(parts[2]) && PIN.matches(parts[3]) ->
+                    PairingPin(parts[2], parts[3])
                 parts == listOf("clock", "24") -> Clock24(true)
                 parts == listOf("clock", "12") -> Clock24(false)
                 parts == listOf("restart") -> Restart
@@ -60,6 +71,7 @@ sealed class HelperCommand(val line: String) {
         }
 
         private val MAC = Regex("[0-9A-F]{2}(:[0-9A-F]{2}){5}")
+        private val PIN = Regex("[0-9]{1,16}")
 
         private fun effect(id: String, value: String): Effect? {
             val i = id.toIntOrNull() ?: return null
@@ -67,6 +79,7 @@ sealed class HelperCommand(val line: String) {
             val ok = when (i) {
                 10, 14, 17 -> v in -15..15
                 0, 1, 2, 3 -> v in -80..0
+                SOURCE_SELECTOR -> v in 0..7
                 else -> false
             }
             return if (ok) Effect(i, v) else null

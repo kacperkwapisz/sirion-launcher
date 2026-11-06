@@ -29,8 +29,7 @@ object Helper {
     private const val HOME = "$PACKAGE/.ui.HomeActivity"
     /** Turns off Android's volume pop-up (see launcher/overlays/no-volume-dialog). */
     private const val OVERLAY = "pl.perier.sirion.novolumedialog"
-    /** The audio chip's main input selector (Autochips effect id) and its inputs. */
-    private const val SOURCE_SELECTOR_MAIN = 34
+    /** Inputs on the audio chip's main selector (HelperCommand.SOURCE_SELECTOR). */
     private const val INPUT_RADIO = 0
     private const val INPUT_ANDROID = 2
     /** The vendor's switch to the custom startup animation in /data/data. */
@@ -128,7 +127,7 @@ object Helper {
             }
             HelperCommand.RadioOff -> if (radioOpen) {
                 // Back to Android's audio (input 2), as the system does when the radio closes.
-                runCatching { AudioChip.set(SOURCE_SELECTOR_MAIN, INPUT_ANDROID) }
+                runCatching { AudioChip.set(HelperCommand.SOURCE_SELECTOR, INPUT_ANDROID) }
                 radio.setAudioToGps()
                 radio.stopListening()
                 radio.closeDevice()
@@ -148,8 +147,15 @@ object Helper {
                 adapter.javaClass.getMethod("setScanMode", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType)
                     .invoke(adapter, BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE, VISIBLE_SECONDS)
             }
+            // Android answers false when the phone's request isn't the kind answered this way,
+            // or the pairing already ended; the launcher shows that rather than waiting.
             is HelperCommand.ConfirmPairing -> bluetooth { adapter ->
-                adapter.getRemoteDevice(command.address).setPairingConfirmation(command.accept)
+                val ok = adapter.getRemoteDevice(command.address).setPairingConfirmation(command.accept)
+                if (command.accept) broadcast(if (ok) "pairing sent" else "pairing refused")
+            }
+            is HelperCommand.PairingPin -> bluetooth { adapter ->
+                val ok = adapter.getRemoteDevice(command.address).setPin(command.pin.toByteArray())
+                broadcast(if (ok) "pairing sent" else "pairing refused")
             }
             is HelperCommand.Clock24 -> sh("settings put system time_12_24 ${if (command.on) 24 else 12}")
             HelperCommand.Restart -> sh("reboot")
@@ -322,7 +328,7 @@ object Helper {
         // The tuner plays into the audio chip's input 0; the speakers only hear it once the
         // chip's main input is switched there (the vendor radio does this on every start).
         // Every time, in case something switched it back to Android meanwhile.
-        runCatching { AudioChip.set(SOURCE_SELECTOR_MAIN, INPUT_RADIO) }
+        runCatching { AudioChip.set(HelperCommand.SOURCE_SELECTOR, INPUT_RADIO) }
         if (radioOpen) return
         radio.listen()
         radio.openDevice()

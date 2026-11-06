@@ -30,11 +30,11 @@ class HelperCommandTest {
 
     @Test
     fun installOnlyTakesApksFromOurUpdateFolder() {
-        val good = "/data/user/0/pl.perier.sirion/cache/ota/sirion-7.apk"
+        val good = "/data/user/0/pl.perier.sirion/files/ota/sirion-7.apk"
         assertEquals(HelperCommand.Install(good), HelperCommand.parse("install $good"))
         assertNull(HelperCommand.parse("install /sdcard/evil.apk"))
-        assertNull(HelperCommand.parse("install /data/user/0/pl.perier.sirion/cache/ota/../../../evil.apk"))
-        assertNull(HelperCommand.parse("install /data/user/0/pl.perier.sirion/cache/ota/notes.txt"))
+        assertNull(HelperCommand.parse("install /data/user/0/pl.perier.sirion/files/ota/../../../evil.apk"))
+        assertNull(HelperCommand.parse("install /data/user/0/pl.perier.sirion/files/ota/notes.txt"))
     }
 
     @Test
@@ -75,5 +75,22 @@ class HelperCommandTest {
         assertNull(HelperCommand.parse("bluetooth pair AA:BB:CC:00:11:22; maybe"))
         assertEquals(HelperCommand.Clock24(false), HelperCommand.parse("clock 12"))
         assertEquals(HelperCommand.Restart, HelperCommand.parse("restart"))
+    }
+
+    @Test
+    fun theRadioMaySwitchTheAudioChipsMainInput() {
+        // Effect 34 is the main input selector: 0 = the tuner, 2 = Android.
+        assertEquals(HelperCommand.Effect(34, 2), HelperCommand.parse("effect 34 2"))
+        assertEquals(HelperCommand.Effect(34, 0), HelperCommand.parse("effect 34 0"))
+        assertNull(HelperCommand.parse("effect 34 9"))
+    }
+
+    @Test
+    fun aPinPairingSendsOnlyDigits() {
+        val pin = HelperCommand.PairingPin("AA:BB:CC:00:11:22", "0000")
+        assertEquals("bluetooth pin AA:BB:CC:00:11:22 0000", pin.line)
+        assertEquals(pin, HelperCommand.parse(pin.line))
+        assertNull(HelperCommand.parse("bluetooth pin AA:BB:CC:00:11:22 12;rm"))
+        assertNull(HelperCommand.parse("bluetooth pin AA:BB:CC:00:11:22 12345678901234567"))
     }
 }

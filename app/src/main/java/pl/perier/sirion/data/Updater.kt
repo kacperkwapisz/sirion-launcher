@@ -59,11 +59,11 @@ class Updater(private val context: Context, private val helper: RootHelper) {
         val manifest = UpdateManifest.parse(fetch(MANIFEST_URL).decodeToString()) ?: return
         if (!manifest.isNewerThan(installedVersion)) {
             // Installed already: drop the old download.
-            File(context.filesDir, "ota").deleteRecursively()
+            File(HelperCommand.UPDATE_DIR).deleteRecursively()
             return
         }
         if (ready?.versionCode == manifest.versionCode) return
-        val dir = File(context.filesDir, "ota").apply { mkdirs() }
+        val dir = File(HelperCommand.UPDATE_DIR).apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
         val apk = apk(manifest)
         apk.writeBytes(fetch(manifest.apk))
@@ -77,7 +77,7 @@ class Updater(private val context: Context, private val helper: RootHelper) {
         main.post { onReady?.invoke() }
     }
 
-    private fun apk(manifest: UpdateManifest) = File(File(context.filesDir, "ota"), "sirion-${manifest.versionCode}.apk")
+    private fun apk(manifest: UpdateManifest) = File(File(HelperCommand.UPDATE_DIR), "sirion-${manifest.versionCode}.apk")
 
     private fun online(): Boolean {
         val connectivity = context.getSystemService(ConnectivityManager::class.java)

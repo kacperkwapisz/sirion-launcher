@@ -34,6 +34,9 @@ class RootHelper(
         }
     }
 
+    /** The helper's answer to a pairing Pair: true when Bluetooth took it. Any thread. */
+    @Volatile var onPairing: ((Boolean) -> Unit)? = null
+
     fun close() {
         runCatching { socket?.close() }
         socket = null
@@ -67,6 +70,7 @@ class RootHelper(
                     line.startsWith("event ") -> onEvent(line.removePrefix("event "))
                     line == "carplay front" -> onCarPlayFront(true)
                     line == "carplay back" -> onCarPlayFront(false)
+                    line.startsWith("pairing ") -> onPairing?.invoke(line == "pairing sent")
                     else -> Log.i(TAG, line)
                 }
             }

@@ -116,7 +116,18 @@ class BluetoothSettings(private val host: SettingsActivity) {
 
     // Pair a new phone
 
-    private data class Request(val device: BluetoothDevice, val code: Int?)
+    /**
+     * A phone asking to pair. [variant] is Android's kind of request: confirm a code (2),
+     * allow without a code (3, 6), give a PIN (0, 7), or type the unit's code on the phone (4, 5).
+     */
+    private data class Request(val device: BluetoothDevice, val code: Int?, val variant: Int) {
+        /** The unit shows a code and the phone types it in: nothing to press here. */
+        val phoneTypesCode get() = variant == VARIANT_DISPLAY_PASSKEY || variant == VARIANT_DISPLAY_PIN
+        val needsPin get() = variant == VARIANT_PIN || variant == VARIANT_PIN_16
+    }
+
+    /** Pair was tapped and the answer is on its way; null when not, false when Bluetooth refused it. */
+    private var sent: Boolean? = null
 
     private var request: Request? = null
     private var pairing = false
@@ -129,7 +140,9 @@ class BluetoothSettings(private val host: SettingsActivity) {
                     // Our screen answers it; keep Android's pairing dialog from opening on top.
                     if (isOrderedBroadcast) abortBroadcast()
                     val code = intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_KEY, -1).takeIf { it >= 0 }
-                    request = Request(device, code)
+                    val variant = intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, VARIANT_PASSKEY_CONFIRMATION)
+                    request = Request(device, code, variant)
+                    sent = null
                     host.render()
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> when (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)) {
@@ -151,6 +164,9 @@ class BluetoothSettings(private val host: SettingsActivity) {
         if (pairing) return
         pairing = true
         request = null
+        sent = null
+        // Bluetooth refusing the answer comes back from the helper; show it instead of waiting.
+        host.app.helper.onPairing = { ok -> host.runOnUiThread { if (!ok) { sent = false; host.render() } } }
         host.app.helper.send(HelperCommand.Discoverable)
         host.registerReceiver(pairingEvents, IntentFilter().apply {
             addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
@@ -162,6 +178,7 @@ class BluetoothSettings(private val host: SettingsActivity) {
     fun stopPairing() {
         if (!pairing) return
         pairing = false
+        host.app.helper.onPairing = null
         runCatching { host.unregisterReceiver(pairingEvents) }
     }
 
@@ -169,10 +186,15 @@ class BluetoothSettings(private val host: SettingsActivity) {
         startPairing()
         val req = request
         val phoneName = req?.device?.name ?: "your phone"
+        val second = when {
+            req?.phoneTypesCode == true -> "Type this code on $phoneName"
+            req?.needsPin == true -> "Pair, then type 0000 on $phoneName if it asks"
+            else -> "Check that $phoneName shows the same code"
+        }
         val steps = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
             addView(step(1, "On your phone, open Bluetooth and choose \"$unitName\"", done = req != null, active = req == null))
-            addView(step(2, "Check that $phoneName shows the same code", done = false, active = req != null),
+            addView(step(2, second, done = false, active = req != null),
                 LinearLayout.LayoutParams(-1, -2).apply { topMargin = kit.dp(20) })
         }
         val box = LinearLayout(host).apply {
@@ -182,12 +204,13 @@ class BluetoothSettings(private val host: SettingsActivity) {
             addView(kit.text(R.style.Text_Context, "Code"))
             val big = when {
                 req == null -> kit.text(R.style.Text_Context, "Shows here when your phone asks").apply { maxLines = 2 }
+                sent == false -> kit.text(R.style.Text_Context, "Didn't pair. Choose \"$unitName\" on $phoneName again").apply { maxLines = 3 }
                 req.code == null -> kit.text(R.style.Text_Context, "$phoneName wants to pair")
                 else -> kit.text(R.style.Text_Code, SettingsText.pairingCode(req.code))
             }
             addView(big, LinearLayout.LayoutParams(-2, 0, 1f).apply { topMargin = kit.dp(12) })
             (big as TextView).gravity = Gravity.CENTER_VERTICAL
-            if (req != null) {
+            if (req != null && !req.phoneTypesCode && sent != false) {
                 addView(LinearLayout(host).apply {
                     orientation = LinearLayout.HORIZONTAL
                     addView(kit.pillSecondary("Cancel") {
@@ -195,9 +218,15 @@ class BluetoothSettings(private val host: SettingsActivity) {
                         request = null
                         host.back()
                     }, LinearLayout.LayoutParams(0, kit.dp(64), 1f))
-                    addView(kit.pill("Pair") {
-                        host.app.helper.send(HelperCommand.ConfirmPairing(req.device.address, accept = true))
-                    }, LinearLayout.LayoutParams(0, kit.dp(64), 1f).apply { marginStart = kit.dp(8) })
+                    addView(kit.pill(if (sent == true) "Pairing…" else "Pair") {
+                        if (sent == true) return@pill
+                        sent = true
+                        host.app.helper.send(
+                            if (req.needsPin) HelperCommand.PairingPin(req.device.address, DEFAULT_PIN)
+                            else HelperCommand.ConfirmPairing(req.device.address, accept = true),
+                        )
+                        host.render()
+                    }.apply { isEnabled = sent != true }, LinearLayout.LayoutParams(0, kit.dp(64), 1f).apply { marginStart = kit.dp(8) })
                 })
             }
         }
@@ -232,5 +261,13 @@ class BluetoothSettings(private val host: SettingsActivity) {
 
     private companion object {
         const val CONNECT_TIMEOUT_MS = 20_000L
+        /** BluetoothDevice.PAIRING_VARIANT_* (some are hidden on 8.1). */
+        const val VARIANT_PIN = 0
+        const val VARIANT_PASSKEY_CONFIRMATION = 2
+        const val VARIANT_DISPLAY_PASSKEY = 4
+        const val VARIANT_DISPLAY_PIN = 5
+        const val VARIANT_PIN_16 = 7
+        /** What car units answer a PIN request with; the phone asks for the same. */
+        const val DEFAULT_PIN = "0000"
     }
 }
